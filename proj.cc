@@ -1,3 +1,6 @@
+#include <algorithm>
+using std::min;
+
 #include <cmath>
 using std::exp2;
 
@@ -5,6 +8,8 @@ using std::exp2;
 using std::cin;
 using std::cout;
 using std::endl;
+using std::istream;
+using std::ostream;
 
 #include <iterator>
 using std::istream_iterator;
@@ -12,16 +17,61 @@ using std::istream_iterator;
 #include <numeric>
 using std::accumulate;
 
-#include <set>
-using std::set;
-
 #include <vector>
 using std::vector;
 
+class MinCover {
+public:
+  MinCover() = delete;
+  MinCover(istream &is) : in(is), N(*(in++)), M(*(in++)), G(N * N, false) {
+    for (int i = 0; i < N; i++) {
+      G.at(i * N + i) = true;
+    }
+    for (int i = 0; i < M; i++) {
+      int v1 = *(in++), v2 = *(in++);
+      G.at(v2 + v1 * N) = true;
+      G.at(v1 + v2 * N) = true;
+    }
+
+  }
+  MinCover(const MinCover &other) = delete;
+  MinCover(MinCover &&other) = default;
+  virtual ~MinCover() = default;
+  int findMin() {
+    vector<bool> tree(N, 0);
+    return min(examineVertices(0, tree), examineVertices(0, tree, false));
+  }
+  int examineVertices(int vertex, vector<bool> tree, bool use = true);
+  friend ostream& operator<<(ostream &out, const MinCover &mc) {
+    for (int i = 0; i < mc.N; i++) {
+      for (int j = 0; j < mc.N; j++) {
+        out << mc.G.at(j + i * mc.N) << " ";
+      }
+      out << endl;
+    }
+    return out;
+  }
+private:
+  istream_iterator<int> in;
+  int N;
+  int M;
+  vector<bool> G;
+};
+
+int MinCover::examineVertices(int vertex, vector<bool> tree, bool use) {
+  tree.at(vertex) = use;
+  ++vertex;
+  if (/* covered */ false || vertex == N) {
+    return vertex;
+  }
+  return min(examineVertices(vertex, tree),
+             examineVertices(vertex, tree, false));
+}
+
 int main() {
   // Read input
-  istream_iterator<int> in(cin);
-  int N = *(in++), M = *(in++);
+  //istream_iterator<int> in(cin);
+  //int N = *(in++), M = *(in++);
 
   // Pick edges, construct set of at most 2x vertices
   // Use this to bound size of solution subsets examined
@@ -29,9 +79,9 @@ int main() {
   // set<int> S;
 
   // Construct adjacency matrix
-  vector<bool> G(N * N, false);
+  // vector<bool> G(N * N, false);
   // All vertices have a "call" with themselves
-  for (int i = 0; i < N; i++) {
+  /*for (int i = 0; i < N; i++) {
     G.at(i * N + i) = true;
   }
   for (int i = 0; i < M; i++) {
@@ -40,27 +90,20 @@ int main() {
     G.at(v1 + v2 * N) = true;
     // S.insert(v1);
     // S.insert(v2);
-  }
+  }*/
 
   // cout << "Max soln: " << S.size() << endl;
   // cout << "Min soln: " << S.size()/2 << endl;
 
   // Print adjacency matrix
-  for (int i = 0; i < N; i++) {
-    for (int j = 0; j < N; j++) {
-      cout << G.at(j + i * N) << " ";
-    }
-    cout << endl;
-  }
+  
 
   // Woo, I don't know how to look at all possible subsets
   // Seriously, who thought letting me write this was a good idea?
-  vector<vector<bool>> possible(exp2(N), vector<bool>(N, false));
-  for (int i = 1; i <= N; i++) {
-    if (/*subset of this size covers*/ false ) {
-      cout << i << endl;
-      return 0;
-    }
-  }
-  return 1;
+  //vector<vector<bool>> possible(exp2(N), vector<bool>(N, false));
+  //vector<bool> tree(N, false);
+  MinCover mc(cin);
+  // cout << mc << endl;
+  cout << mc.findMin() << endl;
+  return 0;
 }
