@@ -49,7 +49,6 @@ public:
     if (v == max_sz || (v == max_sz - 1 && !use) || sz >= min_soln) {
       return max_sz;
     }
-    //vector<bool> keep(G);
     backups.at(v) = G;
     if (use) {
       // We are including this vertex, increment the size of the solution
