@@ -24,7 +24,7 @@ public:
     }
   }
   MinCover(const MinCover &other) = delete;
-  MinCover(MinCover &&other) = default;
+  MinCover(MinCover &&other) = delete;
   virtual ~MinCover() = default;
   int findMin() {
     return min(examineVertices(0, 0, G, true), examineVertices(0, 0, G, false));
