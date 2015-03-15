@@ -58,14 +58,14 @@ public:
         }
       }
     }
-    auto lb = examineVertices(0, 0, true);
+    auto lb = examineVertex(0, 0, true);
     if (!force.at(0)) {
-      auto rb = examineVertices(0, 0, false);
+      auto rb = examineVertex(0, 0, false);
       return min(lb, rb);
     }
     return lb;
   }
-  int_fast8_t examineVertices(int_fast8_t v, int_fast8_t sz, bool use) {
+  int_fast8_t examineVertex(int_fast8_t v, int_fast8_t sz, bool use) {
     // If we've reached the max cover size we can stop
     if (v == max_sz || (v == max_sz - 1 && !use) || sz >= min_soln) {
       return max_sz;
@@ -82,15 +82,16 @@ public:
     }
     ++v;
     if (v == N) {
+      G.swap(backups.at(v - 1));
       return max_sz;
     }
     // If we're not up to at least our minimum cover size, or we didn't use
     // this vertex, we already know we need to recurse
     if (sz < min_sz || !use) {
-      auto lb = examineVertices(v, sz, true);
+      auto lb = examineVertex(v, sz, true);
       auto rb = max_sz;
       if (!force.at(v)) {
-        rb = examineVertices(v, sz, false);
+        rb = examineVertex(v, sz, false);
       }
       G.swap(backups.at(v - 1));
       return min(lb, rb);
@@ -100,32 +101,22 @@ public:
     for (auto i : G) {
       // As soon as we find a remaining edge, keep looking
       if (i) {
-        auto lb = examineVertices(v, sz, true);
+        auto lb = examineVertex(v, sz, true);
         auto rb = max_sz;
         if (!force.at(v)) {
-          rb = examineVertices(v, sz, false);
+          rb = examineVertex(v, sz, false);
         }
         G.swap(backups.at(v - 1));
         return min(lb, rb);
       }
     }
-#ifdef DEBUG
-    soln = G;
-#endif
     if (sz < min_soln) {
       min_soln = sz;
     }
+    G.swap(backups.at(v - 1));
     return sz;
   }
 #ifdef DEBUG
-  void printSoln() {
-    for (int_fast8_t i = 0; i < N; ++i) {
-      for (int_fast8_t j = 0; j < N; ++j) {
-        cout << soln.at(j + i * N) << " ";
-      }
-      cout << endl;
-    }
-  }
   friend ostream &operator<<(ostream &out, const MinCover &mc) {
     for (int_fast8_t i = 0; i < mc.N; ++i) {
       for (int_fast8_t j = 0; j < mc.N; ++j) {
@@ -147,9 +138,6 @@ private:
   vector<bool> G;
   vector<bool> force;
   vector<vector<bool>> backups;
-#ifdef DEBUG
-  vector<bool> soln;
-#endif
 };
 
 int main() {
@@ -158,8 +146,5 @@ int main() {
   cout << mc << endl;
 #endif
   cout << static_cast<int>(mc.findMin()) << endl;
-#ifdef DEBUG
-  mc.printSoln();
-#endif
   return 0;
 }
