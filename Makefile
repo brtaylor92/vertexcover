@@ -7,6 +7,9 @@ proj: proj.cc
 debug: proj.cc
 	$(CXX) $(CXXFLAGS) -O0 -g -DDEBUG $< -o $@
 
+test: test.sh proj
+	./$<
+
 format: proj.cc
 	clang-format -i $^
 

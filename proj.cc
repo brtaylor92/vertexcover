@@ -26,7 +26,8 @@ public:
     vector<bool> S(N, false);
     for (int_fast8_t i = 0; i < M; ++i) {
       int_fast8_t v1 = *(in++), v2 = *(in++);
-      G.at(v1 + v2 * N) = true;
+      // G.at(v1 + v2 * N) = true;
+      G.at(v2 + v1 * N) = true;
       // Pick edges, construct set of at most 2x vertices
       // Use this to bound size of solution subsets examined
       // Thanks Prateek =)
@@ -109,8 +110,8 @@ public:
 
 private:
   istream_iterator<int> in;
-  const int_fast8_t N;
-  const int_fast8_t M;
+  int_fast8_t N;
+  int_fast8_t M;
   int_fast8_t max_sz;
   int_fast8_t min_sz;
   int_fast8_t min_soln;
