@@ -26,7 +26,6 @@ public:
   MinCover(istream &is) : in(is), N(*(in++)), M(*(in++)), G(N * N, false) {
     for (int i = 0; i < M; i++) {
       int v1 = *(in++), v2 = *(in++);
-      // G.at(v2 + v1 * N) = true;
       G.at(v1 + v2 * N) = true;
     }
   }
