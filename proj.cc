@@ -43,15 +43,15 @@ public:
   MinCover(MinCover &&other) = delete;
   ~MinCover() = default;
   int_fast8_t findMin() {
-    for (int i = 0; i < N; i++) {
+    for (int i = 0; i < N; ++i) {
       int_fast8_t sum = 0;
-      for (int j = 0; j < N; j++) {
+      for (int j = 0; j < N; ++j) {
         if (G.at(j + i * N)) {
-          sum++;
+          ++sum;
         }
       }
       if (sum == 1) {
-        for (int j = 0; j < N; j++) {
+        for (int j = 0; j < N; ++j) {
           if (G.at(j + i * N)) {
             force.at(j) = true;
           }
