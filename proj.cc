@@ -24,8 +24,8 @@ class MinCover {
 public:
   MinCover() = delete;
   MinCover(istream &is) : in(is), N(*(in++)), M(*(in++)), G(N * N, false) {
-    for (int i = 0; i < M; ++i) {
-      int v1 = *(in++), v2 = *(in++);
+    for (int_fast8_t i = 0; i < M; ++i) {
+      int_fast8_t v1 = *(in++), v2 = *(in++);
       G.at(v1 + v2 * N) = true;
     }
   }
@@ -35,19 +35,20 @@ public:
   int findMin() {
     return min(examineVertices(0, 0, G, true), examineVertices(0, 0, G, false));
   }
-  int examineVertices(int vertex, int sz, vector<bool> candidate, bool use) {
+  int_fast8_t examineVertices(int_fast8_t vertex, int_fast8_t sz, vector<bool> candidate, bool use) {
     // If we've reached the end of our tree or are not using this vertex,
     // move on to the next set of calls
     if (vertex == N || (vertex == N - 1 && !use)) {
       return N;
     } else if (!use) {
-      return min(examineVertices(vertex + 1, sz, candidate, true),
-               examineVertices(vertex + 1, sz, candidate, false));
+      ++vertex;
+      return min(examineVertices(vertex, sz, candidate, true),
+               examineVertices(vertex, sz, candidate, false));
     }
     // We are including this vertex, increment the size of the soln
     ++sz;
     // Remove the edges covered by this vertex from the graph
-    for (int i = 0; i < N; ++i) {
+    for (int_fast8_t i = 0; i < N; ++i) {
       candidate.at(i + vertex * N) = false;
       candidate.at(vertex + i * N) = false;
     }
@@ -64,16 +65,16 @@ public:
   }
 #ifdef DEBUG
   void printSoln() {
-    for (int i = 0; i < N; ++i) {
-      for (int j = 0; j < N; ++j) {
+    for (int_fast8_t i = 0; i < N; ++i) {
+      for (int_fast8_t j = 0; j < N; ++j) {
         cout << soln.at(j + i * N) << " ";
       }
       cout << endl;
     }
   }
   friend ostream &operator<<(ostream &out, const MinCover &mc) {
-    for (int i = 0; i < mc.N; ++i) {
-      for (int j = 0; j < mc.N; ++j) {
+    for (int_fast8_t i = 0; i < mc.N; ++i) {
+      for (int_fast8_t j = 0; j < mc.N; ++j) {
         out << mc.G.at(j + i * mc.N) << " ";
       }
       out << endl;
@@ -84,8 +85,8 @@ public:
 
 private:
   istream_iterator<int> in;
-  int N;
-  int M;
+  const int_fast8_t N;
+  const int_fast8_t M;
   vector<bool> G;
 #ifdef DEBUG
   vector<bool> soln;
