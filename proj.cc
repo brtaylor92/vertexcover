@@ -81,16 +81,12 @@ public:
       }
     }
     ++v;
-    if (v == N) {
-      G.swap(backups.at(v - 1));
-      return max_sz;
-    }
     // If we're not up to at least our minimum cover size, or we didn't use
     // this vertex, we already know we need to recurse
     if (sz < min_sz || !use) {
       auto lb = examineVertex(v, sz, true);
       auto rb = max_sz;
-      if (!force.at(v)) {
+      if (v == N || !force.at(v)) {
         rb = examineVertex(v, sz, false);
       }
       G.swap(backups.at(v - 1));
@@ -103,7 +99,7 @@ public:
       if (i) {
         auto lb = examineVertex(v, sz, true);
         auto rb = max_sz;
-        if (!force.at(v)) {
+        if (v == N || !force.at(v)) {
           rb = examineVertex(v, sz, false);
         }
         G.swap(backups.at(v - 1));
