@@ -26,7 +26,7 @@ public:
   MinCover(istream &is) : in(is), N(*(in++)), M(*(in++)), G(N * N, false) {
     for (int i = 0; i < M; i++) {
       int v1 = *(in++), v2 = *(in++);
-      //G.at(v2 + v1 * N) = true;
+      // G.at(v2 + v1 * N) = true;
       G.at(v1 + v2 * N) = true;
     }
   }
@@ -69,7 +69,6 @@ public:
       cout << endl;
     }
   }
-#endif
   friend ostream &operator<<(ostream &out, const MinCover &mc) {
     for (int i = 0; i < mc.N; i++) {
       for (int j = 0; j < mc.N; j++) {
@@ -79,6 +78,7 @@ public:
     }
     return out;
   }
+#endif
 
 private:
   istream_iterator<int> in;
