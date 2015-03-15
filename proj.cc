@@ -21,8 +21,8 @@ class MinCover {
 public:
   MinCover() = delete;
   MinCover(istream &is)
-      : in(is), N(*(in++)), M(*(in++)), G(N * N, false), force(N, false),
-        backups(N) {
+      : in(is), N(*(in++)), M(*(in++)), G(N * N, false), force_in(N, false),
+        force_out(N, false), backups(N) {
     vector<bool> S(N, false);
     for (int_fast8_t i = 0; i < M; ++i) {
       int_fast8_t v1 = *(in++), v2 = *(in++);
@@ -51,19 +51,23 @@ public:
         }
       }
       if (sum == 1) {
+        force_out.at(i) = true;
         for (int j = 0; j < N; ++j) {
           if (G.at(j + i * N)) {
-            force.at(j) = true;
+            force_in.at(j) = true;
           }
         }
       }
     }
-    auto lb = examineVertex(0, 0, true);
-    if (!force.at(0)) {
-      auto rb = examineVertex(0, 0, false);
-      return min(lb, rb);
+    auto lb = max_sz;
+    auto rb = max_sz;
+    if (!force_out.at(0)) {
+      lb = examineVertex(0, 0, true);
     }
-    return lb;
+    if (!force_in.at(0)) {
+      rb = examineVertex(0, 0, false);
+    }
+    return min(lb, rb);
   }
   int_fast8_t examineVertex(int_fast8_t v, int_fast8_t sz, bool use) {
     // If we've reached the max cover size we can stop
@@ -84,9 +88,12 @@ public:
     // If we're not up to at least our minimum cover size, or we didn't use
     // this vertex, we already know we need to recurse
     if (sz < min_sz || !use) {
-      auto lb = examineVertex(v, sz, true);
+      auto lb = max_sz;
       auto rb = max_sz;
-      if (v == N || !force.at(v)) {
+      if (v == N || !force_out.at(v)) {
+        lb = examineVertex(v, sz, true);
+      }
+      if (v == N || !force_in.at(v)) {
         rb = examineVertex(v, sz, false);
       }
       G.swap(backups.at(v - 1));
@@ -97,9 +104,12 @@ public:
     for (auto i : G) {
       // As soon as we find a remaining edge, keep looking
       if (i) {
-        auto lb = examineVertex(v, sz, true);
+        auto lb = max_sz;
         auto rb = max_sz;
-        if (v == N || !force.at(v)) {
+        if (v == N || !force_out.at(v)) {
+          lb = examineVertex(v, sz, true);
+        }
+        if (v == N || !force_in.at(v)) {
           rb = examineVertex(v, sz, false);
         }
         G.swap(backups.at(v - 1));
@@ -132,7 +142,8 @@ private:
   int_fast8_t min_sz;
   int_fast8_t min_soln;
   vector<bool> G;
-  vector<bool> force;
+  vector<bool> force_in;
+  vector<bool> force_out;
   vector<vector<bool>> backups;
 };
 
