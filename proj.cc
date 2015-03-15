@@ -24,7 +24,7 @@ class MinCover {
 public:
   MinCover() = delete;
   MinCover(istream &is) : in(is), N(*(in++)), M(*(in++)), G(N * N, false) {
-    for (int i = 0; i < M; i++) {
+    for (int i = 0; i < M; ++i) {
       int v1 = *(in++), v2 = *(in++);
       G.at(v1 + v2 * N) = true;
     }
@@ -33,44 +33,47 @@ public:
   MinCover(MinCover &&other) = default;
   virtual ~MinCover() = default;
   int findMin() {
-    vector<bool> tree(N, false);
-    return min(examineVertices(0, tree, true), examineVertices(0, tree, false));
+    return min(examineVertices(0, 0, G, true), examineVertices(0, 0, G, false));
   }
-  int examineVertices(int vertex, vector<bool> tree, bool use) {
-    tree.at(vertex) = use;
-    ++vertex;
-    vector<bool> test(G);
-    for (int i = 0; i < vertex; i++) {
-      if (tree.at(i)) {
-        for (int j = 0; j < N; j++) {
-          test.at(j + i * N) = false;
-          test.at(i + j * N) = false;
-        }
-      }
-    }
-    if (!accumulate(begin(test), end(test), 0)) {
-#ifdef DEBUG
-      soln = test;
-#endif
-      return accumulate(begin(tree), end(tree), 0);
-    } else if (vertex == N) {
+  int examineVertices(int vertex, int sz, vector<bool> candidate, bool use) {
+    // If we've reached the end of our tree or are not using this vertex,
+    // move on to the next set of calls
+    if (vertex == N || (vertex == N - 1 && !use)) {
       return N;
+    } else if (!use) {
+      return min(examineVertices(vertex + 1, sz, candidate, true),
+               examineVertices(vertex + 1, sz, candidate, false));
     }
-    return min(examineVertices(vertex, tree, true),
-               examineVertices(vertex, tree, false));
+    // We are including this vertex, increment the size of the soln
+    ++sz;
+    // Remove the edges covered by this vertex from the graph
+    for (int i = 0; i < N; ++i) {
+      candidate.at(i + vertex * N) = false;
+      candidate.at(vertex + i * N) = false;
+    }
+    if (!accumulate(begin(candidate), end(candidate), 0)) {
+#ifdef DEBUG
+      soln = candidate;
+#endif
+      return sz;
+    }
+    // We did not find the solution, check the next vertex
+    ++vertex;
+    return min(examineVertices(vertex, sz, candidate, true),
+               examineVertices(vertex, sz, candidate, false));
   }
 #ifdef DEBUG
   void printSoln() {
-    for (int i = 0; i < N; i++) {
-      for (int j = 0; j < N; j++) {
+    for (int i = 0; i < N; ++i) {
+      for (int j = 0; j < N; ++j) {
         cout << soln.at(j + i * N) << " ";
       }
       cout << endl;
     }
   }
   friend ostream &operator<<(ostream &out, const MinCover &mc) {
-    for (int i = 0; i < mc.N; i++) {
-      for (int j = 0; j < mc.N; j++) {
+    for (int i = 0; i < mc.N; ++i) {
+      for (int j = 0; j < mc.N; ++j) {
         out << mc.G.at(j + i * mc.N) << " ";
       }
       out << endl;
