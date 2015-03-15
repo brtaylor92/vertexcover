@@ -1,9 +1,6 @@
 #include <algorithm>
 using std::min;
 
-#include <cmath>
-using std::exp2;
-
 #include <iostream>
 using std::cin;
 using std::cout;
@@ -13,9 +10,6 @@ using std::ostream;
 
 #include <iterator>
 using std::istream_iterator;
-
-#include <numeric>
-using std::accumulate;
 
 #include <vector>
 using std::vector;
