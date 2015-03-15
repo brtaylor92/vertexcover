@@ -42,47 +42,46 @@ public:
   MinCover(MinCover &&other) = delete;
   ~MinCover() = default;
   int_fast8_t findMin() {
-    return min(examineVertices(0, 0, G, true), examineVertices(0, 0, G, false));
+    return min(examineVertices(0, 0, true), examineVertices(0, 0, false));
   }
-  int_fast8_t examineVertices(int_fast8_t v, int_fast8_t sz,
-                              vector<bool> &candidate, bool use) {
+  int_fast8_t examineVertices(int_fast8_t v, int_fast8_t sz, bool use) {
     // If we've reached the max cover size we can stop
     if (v == max_sz || (v == max_sz - 1 && !use) || sz >= min_soln) {
       return max_sz;
     }
-    //vector<bool> keep(candidate);
-    backups.at(v) = candidate;
+    //vector<bool> keep(G);
+    backups.at(v) = G;
     if (use) {
       // We are including this vertex, increment the size of the solution
       ++sz;
       // Remove the edges covered by this vertex from the graph
       for (int_fast8_t i = 0; i < N; ++i) {
-        candidate.at(i + v * N) = false;
-        candidate.at(v + i * N) = false;
+        G.at(i + v * N) = false;
+        G.at(v + i * N) = false;
       }
     }
     ++v;
     // If we're not up to at least our minimum cover size, or we didn't use
     // this vertex, we already know we need to recurse
     if (sz < min_sz || !use) {
-      auto lb = examineVertices(v, sz, candidate, true);
-      auto rb = examineVertices(v, sz, candidate, false);
-      candidate.swap(backups.at(v - 1));
+      auto lb = examineVertices(v, sz, true);
+      auto rb = examineVertices(v, sz, false);
+      G.swap(backups.at(v - 1));
       return min(lb, rb);
     }
     // If we're in our acceptable range and used this vertex,
     // check if this is a cover
-    for (auto i : candidate) {
+    for (auto i : G) {
       // As soon as we find a remaining edge, keep looking
       if (i) {
-        auto lb = examineVertices(v, sz, candidate, true);
-        auto rb = examineVertices(v, sz, candidate, false);
-        candidate.swap(backups.at(v - 1));
+        auto lb = examineVertices(v, sz, true);
+        auto rb = examineVertices(v, sz, false);
+        G.swap(backups.at(v - 1));
         return min(lb, rb);
       }
     }
 #ifdef DEBUG
-    soln = candidate;
+    soln = G;
 #endif
     if (sz < min_soln) {
       min_soln = sz;
