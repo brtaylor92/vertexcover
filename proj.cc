@@ -21,6 +21,7 @@ public:
     for (int_fast8_t i = 0; i < M; ++i) {
       int_fast8_t v1 = *(in++), v2 = *(in++);
       G.at(v1 + v2 * N) = true;
+      max_sz = min(M, N);
     }
   }
   MinCover(const MinCover &other) = delete;
@@ -33,14 +34,14 @@ public:
                               vector<bool> candidate, bool use) {
     // If we've reached the end of our tree or are not using this vertex,
     // move on to the next set of calls
-    if (vertex == N || (vertex == N - 1 && !use)) {
+    if (vertex == max_sz || (vertex == max_sz - 1 && !use)) {
       return N;
     } else if (!use) {
       ++vertex;
       return min(examineVertices(vertex, sz, candidate, true),
                  examineVertices(vertex, sz, candidate, false));
     }
-    // We are including this vertex, increment the size of the soln
+    // We are including this vertex, increment the size of the sol'n
     ++sz;
     // Remove the edges covered by this vertex from the graph
     for (int_fast8_t i = 0; i < N; ++i) {
@@ -49,7 +50,7 @@ public:
     }
     ++vertex;
     for (auto i : candidate) {
-      // As soon as we find a remaining edge, return
+      // As soon as we find a remaining edge, keep looking
       if (i) {
         return min(examineVertices(vertex, sz, candidate, true),
                    examineVertices(vertex, sz, candidate, false));
@@ -84,6 +85,7 @@ private:
   istream_iterator<int> in;
   const int_fast8_t N;
   const int_fast8_t M;
+  int_fast8_t max_sz;
   vector<bool> G;
 #ifdef DEBUG
   vector<bool> soln;
