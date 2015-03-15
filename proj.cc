@@ -33,7 +33,7 @@ public:
     }
     int_fast8_t s_sz = accumulate(begin(S), end(S), 0);
     max_sz = min({M, N, s_sz});
-    min_sz = S.size()/2;
+    min_sz = s_sz / 2;
   }
   MinCover(const MinCover &other) = delete;
   MinCover(MinCover &&other) = delete;
@@ -43,27 +43,28 @@ public:
   }
   int_fast8_t examineVertices(int_fast8_t vertex, int_fast8_t sz,
                               vector<bool> candidate, bool use) {
-    // If we've reached the end of our tree or are not using this vertex,
-    // move on to the next set of calls
+    // If we've reached the max cover size we can assume this is a cover
     if (vertex == max_sz || (vertex == max_sz - 1 && !use)) {
-      return N;
-    } else if (!use) {
-      ++vertex;
+      return max_sz;
+    }
+    if (use) {
+      // We are including this vertex, increment the size of the solution
+      ++sz;
+      // Remove the edges covered by this vertex from the graph
+      for (int_fast8_t i = 0; i < N; ++i) {
+        candidate.at(i + vertex * N) = false;
+        candidate.at(vertex + i * N) = false;
+      }
+    }
+    ++vertex;
+    // If we're not up to at least our minimum cover size, or we didn't use
+    // this vertex, we already know we need to recurse
+    if (sz < min_sz || !use) {
       return min(examineVertices(vertex, sz, candidate, true),
                  examineVertices(vertex, sz, candidate, false));
     }
-    // We are including this vertex, increment the size of the sol'n
-    ++sz;
-    // Remove the edges covered by this vertex from the graph
-    for (int_fast8_t i = 0; i < N; ++i) {
-      candidate.at(i + vertex * N) = false;
-      candidate.at(vertex + i * N) = false;
-    }
-    ++vertex;
-    if (sz < min_sz) {
-      return min(examineVertices(vertex, sz, candidate, true),
-                   examineVertices(vertex, sz, candidate, false));
-    }
+    // If we're in our acceptable range and used this vertex,
+    // check if this is a cover
     for (auto i : candidate) {
       // As soon as we find a remaining edge, keep looking
       if (i) {
