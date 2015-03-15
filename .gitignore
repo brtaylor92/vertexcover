@@ -1,2 +1,6 @@
 proj
 i*
+test
+*.dSYM
+t*
+s*

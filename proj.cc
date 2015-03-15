@@ -24,12 +24,9 @@ class MinCover {
 public:
   MinCover() = delete;
   MinCover(istream &is) : in(is), N(*(in++)), M(*(in++)), G(N * N, false) {
-    /*for (int i = 0; i < N; i++) {
-      G.at(i * N + i) = true;
-    }*/
     for (int i = 0; i < M; i++) {
       int v1 = *(in++), v2 = *(in++);
-      G.at(v2 + v1 * N) = true;
+      //G.at(v2 + v1 * N) = true;
       G.at(v1 + v2 * N) = true;
     }
   }
@@ -53,6 +50,9 @@ public:
       }
     }
     if (!accumulate(begin(test), end(test), 0)) {
+#ifdef DEBUG
+      soln = test;
+#endif
       return accumulate(begin(tree), end(tree), 0);
     } else if (vertex == N) {
       return N;
@@ -60,6 +60,16 @@ public:
     return min(examineVertices(vertex, tree, true),
                examineVertices(vertex, tree, false));
   }
+#ifdef DEBUG
+  void printSoln() {
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < N; j++) {
+        cout << soln.at(j + i * N) << " ";
+      }
+      cout << endl;
+    }
+  }
+#endif
   friend ostream &operator<<(ostream &out, const MinCover &mc) {
     for (int i = 0; i < mc.N; i++) {
       for (int j = 0; j < mc.N; j++) {
@@ -75,43 +85,23 @@ private:
   int N;
   int M;
   vector<bool> G;
+#ifdef DEBUG
+  vector<bool> soln;
+#endif
 };
 
 int main() {
-  // Read input
-  // istream_iterator<int> in(cin);
-  // int N = *(in++), M = *(in++);
-
   // Pick edges, construct set of at most 2x vertices
   // Use this to bound size of solution subsets examined
   // Thanks Prateek =)
-  // set<int> S;
 
-  // Construct adjacency matrix
-  // vector<bool> G(N * N, false);
-  // All vertices have a "call" with themselves
-  /*for (int i = 0; i < N; i++) {
-    G.at(i * N + i) = true;
-  }
-  for (int i = 0; i < M; i++) {
-    int v1 = *(in++), v2 = *(in++);
-    G.at(v2 + v1 * N) = true;
-    G.at(v1 + v2 * N) = true;
-    // S.insert(v1);
-    // S.insert(v2);
-  }*/
-
-  // cout << "Max soln: " << S.size() << endl;
-  // cout << "Min soln: " << S.size()/2 << endl;
-
-  // Print adjacency matrix
-
-  // Woo, I don't know how to look at all possible subsets
-  // Seriously, who thought letting me write this was a good idea?
-  // vector<vector<bool>> possible(exp2(N), vector<bool>(N, false));
-  // vector<bool> tree(N, false);
   MinCover mc(cin);
-  //cout << mc << endl;
+#ifdef DEBUG
+  cout << mc << endl;
+#endif
   cout << mc.findMin() << endl;
+#ifdef DEBUG
+  mc.printSoln();
+#endif
   return 0;
 }
