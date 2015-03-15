@@ -34,6 +34,7 @@ public:
     int_fast8_t s_sz = accumulate(begin(S), end(S), 0);
     max_sz = min({M, N, s_sz});
     min_sz = s_sz / 2;
+    min_soln = max_sz;
   }
   MinCover(const MinCover &other) = delete;
   MinCover(MinCover &&other) = delete;
@@ -43,8 +44,8 @@ public:
   }
   int_fast8_t examineVertices(int_fast8_t vertex, int_fast8_t sz,
                               vector<bool> candidate, bool use) {
-    // If we've reached the max cover size we can assume this is a cover
-    if (vertex == max_sz || (vertex == max_sz - 1 && !use)) {
+    // If we've reached the max cover size we can stop
+    if (vertex == max_sz || (vertex == max_sz - 1 && !use) || sz >= min_soln) {
       return max_sz;
     }
     if (use) {
@@ -75,6 +76,9 @@ public:
 #ifdef DEBUG
     soln = candidate;
 #endif
+    if (sz < min_soln) {
+      min_soln = sz;
+    }
     return sz;
   }
 #ifdef DEBUG
@@ -103,6 +107,7 @@ private:
   const int_fast8_t M;
   int_fast8_t max_sz;
   int_fast8_t min_sz;
+  int_fast8_t min_soln;
   vector<bool> G;
 #ifdef DEBUG
   vector<bool> soln;
