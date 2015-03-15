@@ -35,7 +35,8 @@ public:
   int findMin() {
     return min(examineVertices(0, 0, G, true), examineVertices(0, 0, G, false));
   }
-  int_fast8_t examineVertices(int_fast8_t vertex, int_fast8_t sz, vector<bool> candidate, bool use) {
+  int_fast8_t examineVertices(int_fast8_t vertex, int_fast8_t sz,
+                              vector<bool> candidate, bool use) {
     // If we've reached the end of our tree or are not using this vertex,
     // move on to the next set of calls
     if (vertex == N || (vertex == N - 1 && !use)) {
@@ -43,7 +44,7 @@ public:
     } else if (!use) {
       ++vertex;
       return min(examineVertices(vertex, sz, candidate, true),
-               examineVertices(vertex, sz, candidate, false));
+                 examineVertices(vertex, sz, candidate, false));
     }
     // We are including this vertex, increment the size of the soln
     ++sz;
@@ -52,16 +53,18 @@ public:
       candidate.at(i + vertex * N) = false;
       candidate.at(vertex + i * N) = false;
     }
-    if (!accumulate(begin(candidate), end(candidate), 0)) {
-#ifdef DEBUG
-      soln = candidate;
-#endif
-      return sz;
-    }
-    // We did not find the solution, check the next vertex
     ++vertex;
-    return min(examineVertices(vertex, sz, candidate, true),
-               examineVertices(vertex, sz, candidate, false));
+    for (auto i : candidate) {
+      // As soon as we find a remaining edge, return
+      if (i) {
+        return min(examineVertices(vertex, sz, candidate, true),
+                   examineVertices(vertex, sz, candidate, false));
+      }
+    }
+#ifdef DEBUG
+    soln = candidate;
+#endif
+    return sz;
   }
 #ifdef DEBUG
   void printSoln() {
