@@ -11,8 +11,8 @@ using std::ostream;
 #include <iterator>
 using std::istream_iterator;
 
-#include <set>
-using std::set;
+#include <numeric>
+using std::accumulate;
 
 #include <vector>
 using std::vector;
@@ -21,22 +21,23 @@ class MinCover {
 public:
   MinCover() = delete;
   MinCover(istream &is) : in(is), N(*(in++)), M(*(in++)), G(N * N, false) {
-    set<int_fast8_t> S;
+    vector<bool> S(N, false);
     for (int_fast8_t i = 0; i < M; ++i) {
       int_fast8_t v1 = *(in++), v2 = *(in++);
       G.at(v1 + v2 * N) = true;
       // Pick edges, construct set of at most 2x vertices
       // Use this to bound size of solution subsets examined
       // Thanks Prateek =)
-      S.insert(v1);
-      S.insert(v2);
+      S.at(v1) = true;
+      S.at(v2) = true;
     }
-    max_sz = min({M, N, static_cast<int_fast8_t>(S.size())});
+    int_fast8_t s_sz = accumulate(begin(S), end(S), 0);
+    max_sz = min({M, N, s_sz});
     min_sz = S.size()/2;
   }
   MinCover(const MinCover &other) = delete;
   MinCover(MinCover &&other) = delete;
-  virtual ~MinCover() = default;
+  ~MinCover() = default;
   int_fast8_t findMin() {
     return min(examineVertices(0, 0, G, true), examineVertices(0, 0, G, false));
   }
