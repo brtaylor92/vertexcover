@@ -11,6 +11,9 @@ using std::ostream;
 #include <iterator>
 using std::istream_iterator;
 
+#include <set>
+using std::set;
+
 #include <vector>
 using std::vector;
 
@@ -18,16 +21,23 @@ class MinCover {
 public:
   MinCover() = delete;
   MinCover(istream &is) : in(is), N(*(in++)), M(*(in++)), G(N * N, false) {
+    set<int_fast8_t> S;
     for (int_fast8_t i = 0; i < M; ++i) {
       int_fast8_t v1 = *(in++), v2 = *(in++);
       G.at(v1 + v2 * N) = true;
-      max_sz = min(M, N);
+      // Pick edges, construct set of at most 2x vertices
+      // Use this to bound size of solution subsets examined
+      // Thanks Prateek =)
+      S.insert(v1);
+      S.insert(v2);
     }
+    max_sz = min({M, N, static_cast<int_fast8_t>(S.size())});
+    min_sz = S.size()/2;
   }
   MinCover(const MinCover &other) = delete;
   MinCover(MinCover &&other) = delete;
   virtual ~MinCover() = default;
-  int findMin() {
+  int_fast8_t findMin() {
     return min(examineVertices(0, 0, G, true), examineVertices(0, 0, G, false));
   }
   int_fast8_t examineVertices(int_fast8_t vertex, int_fast8_t sz,
@@ -49,6 +59,10 @@ public:
       candidate.at(vertex + i * N) = false;
     }
     ++vertex;
+    if (sz < min_sz) {
+      return min(examineVertices(vertex, sz, candidate, true),
+                   examineVertices(vertex, sz, candidate, false));
+    }
     for (auto i : candidate) {
       // As soon as we find a remaining edge, keep looking
       if (i) {
@@ -86,6 +100,7 @@ private:
   const int_fast8_t N;
   const int_fast8_t M;
   int_fast8_t max_sz;
+  int_fast8_t min_sz;
   vector<bool> G;
 #ifdef DEBUG
   vector<bool> soln;
@@ -93,15 +108,11 @@ private:
 };
 
 int main() {
-  // Pick edges, construct set of at most 2x vertices
-  // Use this to bound size of solution subsets examined
-  // Thanks Prateek =)
-
   MinCover mc(cin);
 #ifdef DEBUG
   cout << mc << endl;
 #endif
-  cout << mc.findMin() << endl;
+  cout << static_cast<int>(mc.findMin()) << endl;
 #ifdef DEBUG
   mc.printSoln();
 #endif
