@@ -21,12 +21,12 @@ class MinCover {
 public:
   MinCover() = delete;
   MinCover(istream &is)
-      : in(is), N(*(in++)), M(*(in++)), G(N * N, false),
+      : in(is), N(*(in++)), M(*(in++)), G(N * N, false), force(N, false),
         backups(N) {
     vector<bool> S(N, false);
     for (int_fast8_t i = 0; i < M; ++i) {
       int_fast8_t v1 = *(in++), v2 = *(in++);
-      // G.at(v1 + v2 * N) = true;
+      G.at(v1 + v2 * N) = true;
       G.at(v2 + v1 * N) = true;
       // Pick edges, construct set of at most 2x vertices
       // Use this to bound size of solution subsets examined
@@ -43,7 +43,27 @@ public:
   MinCover(MinCover &&other) = delete;
   ~MinCover() = default;
   int_fast8_t findMin() {
-    return min(examineVertices(0, 0, true), examineVertices(0, 0, false));
+    for (int i = 0; i < N; i++) {
+      int_fast8_t sum = 0;
+      for (int j = 0; j < N; j++) {
+        if (G.at(j + i * N)) {
+          sum++;
+        }
+      }
+      if (sum == 1) {
+        for (int j = 0; j < N; j++) {
+          if (G.at(j + i * N)) {
+            force.at(j) = true;
+          }
+        }
+      }
+    }
+    auto lb = examineVertices(0, 0, true);
+    if (!force.at(0)) {
+      auto rb = examineVertices(0, 0, false);
+      return min(lb, rb);
+    }
+    return lb;
   }
   int_fast8_t examineVertices(int_fast8_t v, int_fast8_t sz, bool use) {
     // If we've reached the max cover size we can stop
@@ -61,11 +81,17 @@ public:
       }
     }
     ++v;
+    if (v == N) {
+      return max_sz;
+    }
     // If we're not up to at least our minimum cover size, or we didn't use
     // this vertex, we already know we need to recurse
     if (sz < min_sz || !use) {
       auto lb = examineVertices(v, sz, true);
-      auto rb = examineVertices(v, sz, false);
+      auto rb = max_sz;
+      if (!force.at(v)) {
+        rb = examineVertices(v, sz, false);
+      }
       G.swap(backups.at(v - 1));
       return min(lb, rb);
     }
@@ -75,7 +101,10 @@ public:
       // As soon as we find a remaining edge, keep looking
       if (i) {
         auto lb = examineVertices(v, sz, true);
-        auto rb = examineVertices(v, sz, false);
+        auto rb = max_sz;
+        if (!force.at(v)) {
+          rb = examineVertices(v, sz, false);
+        }
         G.swap(backups.at(v - 1));
         return min(lb, rb);
       }
@@ -116,6 +145,7 @@ private:
   int_fast8_t min_sz;
   int_fast8_t min_soln;
   vector<bool> G;
+  vector<bool> force;
   vector<vector<bool>> backups;
 #ifdef DEBUG
   vector<bool> soln;
