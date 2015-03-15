@@ -20,7 +20,9 @@ using std::vector;
 class MinCover {
 public:
   MinCover() = delete;
-  MinCover(istream &is) : in(is), N(*(in++)), M(*(in++)), G(N * N, false) {
+  MinCover(istream &is)
+      : in(is), N(*(in++)), M(*(in++)), G(N * N, false),
+        backups(N) {
     vector<bool> S(N, false);
     for (int_fast8_t i = 0; i < M; ++i) {
       int_fast8_t v1 = *(in++), v2 = *(in++);
@@ -42,35 +44,41 @@ public:
   int_fast8_t findMin() {
     return min(examineVertices(0, 0, G, true), examineVertices(0, 0, G, false));
   }
-  int_fast8_t examineVertices(int_fast8_t vertex, int_fast8_t sz,
-                              vector<bool> candidate, bool use) {
+  int_fast8_t examineVertices(int_fast8_t v, int_fast8_t sz,
+                              vector<bool> &candidate, bool use) {
     // If we've reached the max cover size we can stop
-    if (vertex == max_sz || (vertex == max_sz - 1 && !use) || sz >= min_soln) {
+    if (v == max_sz || (v == max_sz - 1 && !use) || sz >= min_soln) {
       return max_sz;
     }
+    //vector<bool> keep(candidate);
+    backups.at(v) = candidate;
     if (use) {
       // We are including this vertex, increment the size of the solution
       ++sz;
       // Remove the edges covered by this vertex from the graph
       for (int_fast8_t i = 0; i < N; ++i) {
-        candidate.at(i + vertex * N) = false;
-        candidate.at(vertex + i * N) = false;
+        candidate.at(i + v * N) = false;
+        candidate.at(v + i * N) = false;
       }
     }
-    ++vertex;
+    ++v;
     // If we're not up to at least our minimum cover size, or we didn't use
     // this vertex, we already know we need to recurse
     if (sz < min_sz || !use) {
-      return min(examineVertices(vertex, sz, candidate, true),
-                 examineVertices(vertex, sz, candidate, false));
+      auto lb = examineVertices(v, sz, candidate, true);
+      auto rb = examineVertices(v, sz, candidate, false);
+      candidate.swap(backups.at(v - 1));
+      return min(lb, rb);
     }
     // If we're in our acceptable range and used this vertex,
     // check if this is a cover
     for (auto i : candidate) {
       // As soon as we find a remaining edge, keep looking
       if (i) {
-        return min(examineVertices(vertex, sz, candidate, true),
-                   examineVertices(vertex, sz, candidate, false));
+        auto lb = examineVertices(v, sz, candidate, true);
+        auto rb = examineVertices(v, sz, candidate, false);
+        candidate.swap(backups.at(v - 1));
+        return min(lb, rb);
       }
     }
 #ifdef DEBUG
@@ -109,6 +117,7 @@ private:
   int_fast8_t min_sz;
   int_fast8_t min_soln;
   vector<bool> G;
+  vector<vector<bool>> backups;
 #ifdef DEBUG
   vector<bool> soln;
 #endif
