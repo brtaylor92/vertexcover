@@ -7,11 +7,11 @@ proj: proj.cc
 debug: proj.cc
 	$(CXX) $(CXXFLAGS) -O0 -g -DDEBUG $< -o $@
 
-test: test.sh proj
+test: test/test.sh clean proj
 	./$<
 
 format: proj.cc
 	clang-format -i $^
 
 clean:
-	rm -rf proj debug *.dSYM
+	rm -rf proj debug *.dSYM out
