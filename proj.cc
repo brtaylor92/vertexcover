@@ -30,7 +30,7 @@ public:
   MinCover(istream &is)
       : in(is), N(*(in++)), M(*(in++)), G(N * N, false), force_in(N, false),
         force_out(N, false), adjacency(N), backups(N) {
-    //vector<bool> S(N, false);
+    // vector<bool> S(N, false);
     for (int_fast8_t i = 0; i < M; ++i) {
       int_fast8_t v1 = *(in++), v2 = *(in++);
       G.at(v1 + v2 * N) = true;
@@ -40,13 +40,13 @@ public:
       // Pick edges, construct set of at most 2x vertices
       // Use this to bound size of solution subsets examined
       // Thanks Prateek =)
-      //S.at(v1) = true;
-      //S.at(v2) = true;
+      // S.at(v1) = true;
+      // S.at(v2) = true;
     }
-    //int_fast8_t s_sz = accumulate(begin(S), end(S), 0);
-    //max_sz = min({M, N, s_sz});
+    // int_fast8_t s_sz = accumulate(begin(S), end(S), 0);
+    // max_sz = min({M, N, s_sz});
     max_sz = min(M, N);
-    min_sz = 1;//s_sz / 2; // This does not appear to be working
+    min_sz = 1; // s_sz / 2; // This does not appear to be working
     min_soln = max_sz;
   }
   MinCover(const MinCover &other) = delete;
@@ -56,7 +56,7 @@ public:
     for (auto &i : adjacency) {
       degrees.push_back(i.size());
     }
-    for (int i = 0; i < N; ++i) {
+    for (int_fast8_t i = 0; i < N; ++i) {
       if (!degrees.at(i)) {
         force_out.at(i) = true;
       } else if (degrees.at(i) == 1) {
@@ -64,14 +64,15 @@ public:
         force_out.at(i) = true;
       }
     }
-    for (int i = 0; i < N; ++i) {
+    for (int_fast8_t i = 0; i < N; ++i) {
       order.push_back(make_pair(degrees.at(i), i));
     }
     sort(begin(order), end(order), greater<pair<int_fast8_t, int_fast8_t>>());
 #ifdef DEBUG
     cout << "q: " << endl;
-    for (int i = 0; i < N; ++i) {
-      cout << "<" << (int)order.at(i).first << ", " << (int)order.at(i).second << ">" << endl;
+    for (int_fast8_t i = 0; i < N; ++i) {
+      cout << "<" << (int)order.at(i).first << ", " << (int)order.at(i).second
+           << ">" << endl;
     }
     cout << "force_in: ";
     for (auto i : force_in) {
@@ -100,26 +101,9 @@ public:
     if (d + (use ? 1 : 2) >= N || sz + 1 >= min_soln) {
       return max_sz;
     }
-#ifdef DEBUG
-    cout << "operating on vertex " << (int)v << " at depth " << (int)d << endl;
-#endif
     backups.at(d) = G;
     auto v = order.at(d).second;
     ++d;
-    if (use) {
-      // We are including this vertex, increment the size of the solution
-      ++sz;
-      // Remove the edges covered by this vertex from the graph
-      for (int_fast8_t i = 0; i < N; ++i) {
-        if (G.at(i + v * N)) {
-          G.at(i + v * N) = false;
-          G.at(v + i * N) = false;
-        }
-      }
-    }
-#ifdef DEBUG
-    cout << (*this) << endl;
-#endif
     // If we're not up to at least our minimum cover size, or we didn't use
     // this vertex, we already know we need to recurse
     if (!use /*|| sz < min_sz*/) {
@@ -130,11 +114,27 @@ public:
         lb = examineVertex(d, sz, true);
       }
       if (!force_in.at(v)) {
-      rb = examineVertex(d, sz, false);
+        rb = examineVertex(d, sz, false);
       }
       G.swap(backups.at(d - 1));
       return min(lb, rb);
     }
+
+#ifdef DEBUG
+    cout << "operating on vertex " << (int)v << " at depth " << (int)d << endl;
+#endif
+    // We are including this vertex, increment the size of the solution
+    ++sz;
+    // Remove the edges covered by this vertex from the graph
+    for (int_fast8_t i = 0; i < N; ++i) {
+      if (G.at(i + v * N)) {
+        G.at(i + v * N) = false;
+        G.at(v + i * N) = false;
+      }
+    }
+#ifdef DEBUG
+    cout << (*this) << endl;
+#endif
     // If we're in our acceptable range and used this vertex,
     // check if this is a cover
     for (auto i : G) {
@@ -153,13 +153,13 @@ public:
         return min(lb, rb);
       }
     }
-#ifdef DEBUG
-    cout << "found solution of size " << (int)sz << endl;
-#endif
     if (sz < min_soln) {
       min_soln = sz;
     }
     G.swap(backups.at(d - 1));
+#ifdef DEBUG
+    cout << "found solution of size " << (int)sz << endl;
+#endif
     return sz;
   }
 #ifdef DEBUG
