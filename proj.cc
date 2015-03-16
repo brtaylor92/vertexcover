@@ -46,28 +46,6 @@ public:
   MinCover(MinCover &&other) = delete;
   ~MinCover() = default;
   int_fast8_t findMin() {
-    /*for (int i = 0; i < N; ++i) {
-      int_fast8_t sum = 0;
-      for (int j = 0; j < N; ++j) {
-        if (G.at(j + i * N)) {
-          ++sum;
-        }
-      }
-      if (sum <= 1) {
-        force_out.at(i) = true;
-        for (int j = 0; j < N; ++j) {
-          if (G.at(j + i * N)) {
-            force_in.at(j) = true;
-          }
-        }
-      }
-    }*/
-    /*for (auto &i : adjacency) {
-      for (auto &j : i) {
-        cout << (int)j << " ";
-      }
-      cout << endl;
-    }*/
     for (auto &i : adjacency) {
       degrees.push_back(i.size());
     }
@@ -79,16 +57,6 @@ public:
         force_out.at(i) = true;
       }
     }
-    /*cout << "force out: " << endl;
-    for (auto i : force_out) {
-      cout << i << " ";
-    }
-    cout << endl;
-    cout << "force in: " << endl;
-    for (auto i : force_in) {
-      cout << i << " ";
-    }
-    cout << endl;*/
     auto lb = max_sz;
     auto rb = max_sz;
     if (!force_out.at(0)) {
@@ -105,8 +73,6 @@ public:
       return max_sz;
     }
     backups.at(v) = G;
-    //b_degrees.at(v) = degrees;
-    //b_force_out.at(v) = force_out;
     if (use) {
       // We are including this vertex, increment the size of the solution
       ++sz;
@@ -115,9 +81,6 @@ public:
         if (G.at(i + v * N)) {
           G.at(i + v * N) = false;
           G.at(v + i * N) = false;
-          /*if (!force_out.at(i) && !--degrees.at(i)) {
-            force_out.at(i) = true;
-          }*/
         }
       }
     }
@@ -133,8 +96,6 @@ public:
       if (v != N && !force_in.at(v)) {
         rb = examineVertex(v, sz, false);
       }
-      //force_out.swap(b_force_out.at(v - 1));
-      //degrees.swap(b_degrees.at(v - 1));
       G.swap(backups.at(v - 1));
       return min(lb, rb);
     }
@@ -151,8 +112,6 @@ public:
         if (v != N && !force_in.at(v)) {
           rb = examineVertex(v, sz, false);
         }
-        //force_out.swap(b_force_out.at(v - 1));
-        //degrees.swap(b_degrees.at(v - 1));
         G.swap(backups.at(v - 1));
         return min(lb, rb);
       }
@@ -160,8 +119,6 @@ public:
     if (sz < min_soln) {
       min_soln = sz;
     }
-    //force_out.swap(b_force_out.at(v - 1));
-    //degrees.swap(b_degrees.at(v -1));
     G.swap(backups.at(v - 1));
     return sz;
   }
@@ -188,8 +145,6 @@ private:
   vector<bool> force_in;
   vector<bool> force_out;
   vector<vector<int_fast8_t>> adjacency;
-  //vector<vector<int_fast8_t>> b_degrees;
-  //vector<vector<bool>> b_force_out;
   vector<int_fast8_t> degrees;
   vector<vector<bool>> backups;
 };
