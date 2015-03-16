@@ -29,7 +29,7 @@ public:
   MinCover() = delete;
   MinCover(istream &is)
       : in(is), N(*(in++)), M(*(in++)), G(N * N, false), force_in(N, false),
-        force_out(N, false), adjacency(N), /*b_degrees(N), b_force_out(N),*/ backups(N) {
+        force_out(N, false), adjacency(N), backups(N) {
     //vector<bool> S(N, false);
     for (int_fast8_t i = 0; i < M; ++i) {
       int_fast8_t v1 = *(in++), v2 = *(in++);
@@ -96,15 +96,16 @@ public:
     return min(lb, rb);
   }
   int_fast8_t examineVertex(int_fast8_t d, int_fast8_t sz, bool use) {
-    auto v = order.at(d).second;
+    // If we've reached the max cover size we can stop
+    if (d + (use ? 1 : 2) >= N || sz + 1 >= min_soln) {
+      return max_sz;
+    }
 #ifdef DEBUG
     cout << "operating on vertex " << (int)v << " at depth " << (int)d << endl;
 #endif
-    // If we've reached the max cover size we can stop
-    if (d > max_sz || (d == max_sz && !use) || sz >= min_soln) {
-      return max_sz;
-    }
     backups.at(d) = G;
+    auto v = order.at(d).second;
+    ++d;
     if (use) {
       // We are including this vertex, increment the size of the solution
       ++sz;
@@ -119,11 +120,26 @@ public:
 #ifdef DEBUG
     cout << (*this) << endl;
 #endif
-    ++d;
     // If we're not up to at least our minimum cover size, or we didn't use
     // this vertex, we already know we need to recurse
-    if (sz < min_sz || !use) {
-      if (d < N) {
+    if (!use /*|| sz < min_sz*/) {
+      auto lb = max_sz;
+      auto rb = max_sz;
+      v = order.at(d).second;
+      if (!force_out.at(v)) {
+        lb = examineVertex(d, sz, true);
+      }
+      if (!force_in.at(v)) {
+      rb = examineVertex(d, sz, false);
+      }
+      G.swap(backups.at(d - 1));
+      return min(lb, rb);
+    }
+    // If we're in our acceptable range and used this vertex,
+    // check if this is a cover
+    for (auto i : G) {
+      // As soon as we find a remaining edge, keep looking
+      if (i) {
         auto lb = max_sz;
         auto rb = max_sz;
         v = order.at(d).second;
@@ -135,28 +151,6 @@ public:
         }
         G.swap(backups.at(d - 1));
         return min(lb, rb);
-      }
-      return max_sz;
-    }
-    // If we're in our acceptable range and used this vertex,
-    // check if this is a cover
-    for (auto i : G) {
-      // As soon as we find a remaining edge, keep looking
-      if (i) {
-        if (d < N) {
-          auto lb = max_sz;
-          auto rb = max_sz;
-          v = order.at(d).second;
-          if (!force_out.at(v)) {
-            lb = examineVertex(d, sz, true);
-          }
-          if (!force_in.at(v)) {
-            rb = examineVertex(d, sz, false);
-          }
-          G.swap(backups.at(d - 1));
-          return min(lb, rb);
-        }
-        return max_sz;
       }
     }
 #ifdef DEBUG
