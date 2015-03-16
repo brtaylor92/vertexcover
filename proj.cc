@@ -62,10 +62,6 @@ public:
         int_fast16_t neighbor = adjacency.at(i).front();
         adjacency.at(i).pop_back();
         adjacency.at(neighbor).clear();
-#ifdef DEBUG
-        cout << "Found deg 1 vertex " << (int)i;
-        cout << " with neighbor " << (int)neighbor << endl;
-#endif
         for (int j = 0; j < N; ++j) {
           if (G.at(j + neighbor * N)) {
             G.at(j + neighbor * N) = false;
@@ -77,10 +73,6 @@ public:
       }
     }
     int_fast16_t sz = s.size();
-#ifdef DEBUG
-    cout << "after degree-1 pruning: " << endl;
-    cout << (*this) << endl;
-#endif
     if (!M) {
       return sz;
     }
@@ -88,14 +80,6 @@ public:
       order.push_back(make_pair(adjacency.at(i).size(), i));
     }
     sort(begin(order), end(order), greater<pair<int_fast16_t, int_fast16_t>>());
-#ifdef DEBUG
-    cout << "q: " << endl;
-    for (int_fast16_t i = 0; i < N; ++i) {
-      cout << "<" << (int)order.at(i).first << ", " << (int)order.at(i).second
-           << ">" << endl;
-    }
-    cout << endl;
-#endif
     auto lb = examineVertex(0, sz, true);
     auto rb = examineVertex(0, sz, false);
     return min(lb, rb);
@@ -118,10 +102,6 @@ public:
       M = oldM;
       return min(lb, rb);
     }
-
-#ifdef DEBUG
-    cout << "operating on vertex " << (int)v << " at depth " << (int)d << endl;
-#endif
     // We are including this vertex, increment the size of the solution
     ++sz;
     // Remove the edges covered by this vertex from the graph
@@ -132,10 +112,6 @@ public:
         --M;
       }
     }
-#ifdef DEBUG
-    cout << (int)M << endl;
-    cout << (*this) << endl;
-#endif
     // If we're in our acceptable range and used this vertex,
     // check if this is a cover
     if (M) {
@@ -150,22 +126,8 @@ public:
     }
     G.swap(backups.at(d - 1));
     M = oldM;
-#ifdef DEBUG
-    cout << "found solution of size " << (int)sz << endl;
-#endif
     return sz;
   }
-#ifdef DEBUG
-  friend ostream &operator<<(ostream &out, const MinCover &mc) {
-    for (int_fast16_t i = 0; i < mc.N; ++i) {
-      for (int_fast16_t j = 0; j < mc.N; ++j) {
-        out << mc.G.at(j + i * mc.N) << " ";
-      }
-      out << endl;
-    }
-    return out;
-  }
-#endif
 
 private:
   istream_iterator<int> in;
@@ -182,9 +144,6 @@ private:
 
 int main() {
   MinCover mc(cin);
-#ifdef DEBUG
-  cout << mc << endl;
-#endif
   cout << static_cast<int>(mc.findMin()) << endl;
   return 0;
 }
