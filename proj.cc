@@ -1,6 +1,9 @@
 #include <algorithm>
 using std::min;
 
+#include <functional>
+using std::greater;
+
 #include <iostream>
 using std::cin;
 using std::cout;
@@ -13,6 +16,10 @@ using std::istream_iterator;
 
 #include <numeric>
 using std::accumulate;
+
+#include <utility>
+using std::make_pair;
+using std::pair;
 
 #include <vector>
 using std::vector;
@@ -57,22 +64,47 @@ public:
         force_out.at(i) = true;
       }
     }
+    for (int i = 0; i < N; ++i) {
+      order.push_back(make_pair(degrees.at(i), i));
+    }
+    sort(begin(order), end(order), greater<pair<int_fast8_t, int_fast8_t>>());
+#ifdef DEBUG
+    cout << "q: " << endl;
+    for (int i = 0; i < N; ++i) {
+      cout << "<" << (int)order.at(i).first << ", " << (int)order.at(i).second << ">" << endl;
+    }
+    cout << "force_in: ";
+    for (auto i : force_in) {
+      cout << i << " ";
+    }
+    cout << endl;
+    cout << "force_out: ";
+    for (auto i : force_out) {
+      cout << i << " ";
+    }
+    cout << endl;
+#endif
     auto lb = max_sz;
     auto rb = max_sz;
-    if (!force_out.at(0)) {
+    auto v = order.at(0).second;
+    if (!force_out.at(v)) {
       lb = examineVertex(0, 0, true);
     }
-    if (!force_in.at(0)) {
+    if (!force_in.at(v)) {
       rb = examineVertex(0, 0, false);
     }
     return min(lb, rb);
   }
-  int_fast8_t examineVertex(int_fast8_t v, int_fast8_t sz, bool use) {
+  int_fast8_t examineVertex(int_fast8_t d, int_fast8_t sz, bool use) {
+    auto v = order.at(d).second;
+#ifdef DEBUG
+    cout << "operating on vertex " << (int)v << " at depth " << (int)d << endl;
+#endif
     // If we've reached the max cover size we can stop
-    if (v > max_sz || (v == max_sz && !use) || sz >= min_soln) {
+    if (d > max_sz || (d == max_sz && !use) || sz >= min_soln) {
       return max_sz;
     }
-    backups.at(v) = G;
+    backups.at(d) = G;
     if (use) {
       // We are including this vertex, increment the size of the solution
       ++sz;
@@ -84,42 +116,56 @@ public:
         }
       }
     }
-    ++v;
+#ifdef DEBUG
+    cout << (*this) << endl;
+#endif
+    ++d;
     // If we're not up to at least our minimum cover size, or we didn't use
     // this vertex, we already know we need to recurse
     if (sz < min_sz || !use) {
-      auto lb = max_sz;
-      auto rb = max_sz;
-      if (v != N && !force_out.at(v)) {
-        lb = examineVertex(v, sz, true);
+      if (d < N) {
+        auto lb = max_sz;
+        auto rb = max_sz;
+        v = order.at(d).second;
+        if (!force_out.at(v)) {
+          lb = examineVertex(d, sz, true);
+        }
+        if (!force_in.at(v)) {
+          rb = examineVertex(d, sz, false);
+        }
+        G.swap(backups.at(d - 1));
+        return min(lb, rb);
       }
-      if (v != N && !force_in.at(v)) {
-        rb = examineVertex(v, sz, false);
-      }
-      G.swap(backups.at(v - 1));
-      return min(lb, rb);
+      return max_sz;
     }
     // If we're in our acceptable range and used this vertex,
     // check if this is a cover
     for (auto i : G) {
       // As soon as we find a remaining edge, keep looking
       if (i) {
-        auto lb = max_sz;
-        auto rb = max_sz;
-        if (v != N && !force_out.at(v)) {
-          lb = examineVertex(v, sz, true);
+        if (d < N) {
+          auto lb = max_sz;
+          auto rb = max_sz;
+          v = order.at(d).second;
+          if (!force_out.at(v)) {
+            lb = examineVertex(d, sz, true);
+          }
+          if (!force_in.at(v)) {
+            rb = examineVertex(d, sz, false);
+          }
+          G.swap(backups.at(d - 1));
+          return min(lb, rb);
         }
-        if (v != N && !force_in.at(v)) {
-          rb = examineVertex(v, sz, false);
-        }
-        G.swap(backups.at(v - 1));
-        return min(lb, rb);
+        return max_sz;
       }
     }
+#ifdef DEBUG
+    cout << "found solution of size " << (int)sz << endl;
+#endif
     if (sz < min_soln) {
       min_soln = sz;
     }
-    G.swap(backups.at(v - 1));
+    G.swap(backups.at(d - 1));
     return sz;
   }
 #ifdef DEBUG
@@ -146,6 +192,7 @@ private:
   vector<bool> force_out;
   vector<vector<int_fast8_t>> adjacency;
   vector<int_fast8_t> degrees;
+  vector<pair<int_fast8_t, int_fast8_t>> order;
   vector<vector<bool>> backups;
 };
 
