@@ -31,8 +31,8 @@ class MinCover {
 public:
   MinCover() = delete;
   MinCover(istream &is)
-      : in(is), N(*(in++)), M(*(in++)), G(N * N, false), adjacency(N),
-        backups(N) {
+      : in(is), N(*(in++)), M(*(in++)), G(N * N, false), adjacency(N), 
+        backups(N), edges(N) {
     // vector<bool> S(N, false);
     for (int_fast16_t i = 0; i < M; ++i) {
       int_fast16_t v1 = *(in++), v2 = *(in++);
@@ -67,8 +67,11 @@ public:
         cout << " with neighbor " << (int)neighbor << endl;
 #endif
         for (int j = 0; j < N; ++j) {
-          G.at(j + neighbor * N) = false;
-          G.at(neighbor + j * N) = false;
+          if (G.at(j + neighbor * N)) {
+            G.at(j + neighbor * N) = false;
+            G.at(neighbor + j * N) = false;
+            --M;
+          }
         }
         s.insert(neighbor);
       }
@@ -78,14 +81,7 @@ public:
     cout << "after degree-1 pruning: " << endl;
     cout << (*this) << endl;
 #endif
-    bool soln = true;
-    for (auto i : G) {
-      if (i) {
-        soln = false;
-        break;
-      }
-    }
-    if (soln) {
+    if (!M) {
       return sz;
     }
     for (int_fast16_t i = 0; i < N; ++i) {
@@ -110,6 +106,7 @@ public:
       return max_sz;
     }
     backups.at(d) = G;
+    edges.at(d) = M;
     auto v = order.at(d).second;
     ++d;
     // If we're not up to at least our minimum cover size, or we didn't use
@@ -118,6 +115,7 @@ public:
       auto lb = examineVertex(d, sz, true);
       auto rb = examineVertex(d, sz, false);
       G.swap(backups.at(d - 1));
+      M = edges.at(d - 1);
       return min(lb, rb);
     }
 
@@ -131,26 +129,27 @@ public:
       if (G.at(i + v * N)) {
         G.at(i + v * N) = false;
         G.at(v + i * N) = false;
+        --M;
       }
     }
 #ifdef DEBUG
+    cout << (int)M << endl;
     cout << (*this) << endl;
 #endif
     // If we're in our acceptable range and used this vertex,
     // check if this is a cover
-    for (auto i : G) {
-      // As soon as we find a remaining edge, keep looking
-      if (i) {
-        auto lb = examineVertex(d, sz, true);
-        auto rb = examineVertex(d, sz, false);
-        G.swap(backups.at(d - 1));
-        return min(lb, rb);
-      }
+    if (M) {
+      auto lb = examineVertex(d, sz, true);
+      auto rb = examineVertex(d, sz, false);
+      G.swap(backups.at(d - 1));
+      M = edges.at(d - 1);
+      return min(lb, rb);
     }
     if (sz < min_soln) {
       min_soln = sz;
     }
     G.swap(backups.at(d - 1));
+    M = edges.at(d - 1);
 #ifdef DEBUG
     cout << "found solution of size " << (int)sz << endl;
 #endif
@@ -179,6 +178,7 @@ private:
   vector<vector<int_fast16_t>> adjacency;
   vector<pair<int_fast16_t, int_fast16_t>> order;
   vector<vector<bool>> backups;
+  vector<int_fast16_t> edges;
 };
 
 int main() {
