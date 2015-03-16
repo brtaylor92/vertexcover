@@ -31,8 +31,8 @@ class MinCover {
 public:
   MinCover() = delete;
   MinCover(istream &is)
-      : in(is), N(*(in++)), M(*(in++)), G(N * N, false), adjacency(N), 
-        backups(N), edges(N) {
+      : in(is), N(*(in++)), M(*(in++)), G(N * N, false), adjacency(N),
+        backups(N) {
     // vector<bool> S(N, false);
     for (int_fast16_t i = 0; i < M; ++i) {
       int_fast16_t v1 = *(in++), v2 = *(in++);
@@ -106,7 +106,7 @@ public:
       return max_sz;
     }
     backups.at(d) = G;
-    edges.at(d) = M;
+    int_fast16_t oldM = M;
     auto v = order.at(d).second;
     ++d;
     // If we're not up to at least our minimum cover size, or we didn't use
@@ -115,7 +115,7 @@ public:
       auto lb = examineVertex(d, sz, true);
       auto rb = examineVertex(d, sz, false);
       G.swap(backups.at(d - 1));
-      M = edges.at(d - 1);
+      M = oldM;
       return min(lb, rb);
     }
 
@@ -142,14 +142,14 @@ public:
       auto lb = examineVertex(d, sz, true);
       auto rb = examineVertex(d, sz, false);
       G.swap(backups.at(d - 1));
-      M = edges.at(d - 1);
+      M = oldM;
       return min(lb, rb);
     }
     if (sz < min_soln) {
       min_soln = sz;
     }
     G.swap(backups.at(d - 1));
-    M = edges.at(d - 1);
+    M = oldM;
 #ifdef DEBUG
     cout << "found solution of size " << (int)sz << endl;
 #endif
@@ -178,7 +178,6 @@ private:
   vector<vector<int_fast16_t>> adjacency;
   vector<pair<int_fast16_t, int_fast16_t>> order;
   vector<vector<bool>> backups;
-  vector<int_fast16_t> edges;
 };
 
 int main() {
