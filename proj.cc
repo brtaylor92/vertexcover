@@ -1,6 +1,7 @@
 #include <algorithm>
 using std::count;
 using std::min;
+using std::transform;
 
 #include <functional>
 using std::greater;
@@ -27,7 +28,7 @@ public:
   MinCover() = delete;
   MinCover(istream &is)
       : in(is), N(*(in++)), M(*(in++)), G(N * N, false), adjacency(N),
-        backups(N) {
+        order(N), backups(N) {
     for (int_fast16_t i = 0; i < M; ++i) {
       int_fast16_t v1 = *(in++), v2 = *(in++);
       G.at(v1 + v2 * N) = true;
@@ -65,10 +66,12 @@ public:
     if (!M) {
       return sz;
     }
+    vector<pair<int_fast16_t, int_fast16_t>> temp_order;
     for (int_fast16_t i = 0; i < N; ++i) {
-      order.push_back(make_pair(adjacency.at(i).size(), i));
+      temp_order.push_back(make_pair(adjacency.at(i).size(), i));
     }
-    sort(begin(order), end(order), greater<pair<int_fast16_t, int_fast16_t>>());
+    sort(begin(temp_order), end(temp_order), greater<pair<int_fast16_t, int_fast16_t>>());
+    transform(begin(temp_order), end(temp_order), begin(order), [](pair<int_fast16_t, int_fast16_t> i) { return i.second; });
     auto lb = examineVertex(0, sz, true);
     auto rb = examineVertex(0, sz, false);
     return min(lb, rb);
@@ -80,7 +83,7 @@ public:
     }
     backups.at(d) = G;
     int_fast16_t oldM = M;
-    auto v = order.at(d).second;
+    auto v = order.at(d);
     ++d;
     // If we're not up to at least our minimum cover size, or we didn't use
     // this vertex, we already know we need to recurse
@@ -126,7 +129,7 @@ private:
   int_fast16_t min_soln;
   vector<bool> G;
   vector<vector<int_fast16_t>> adjacency;
-  vector<pair<int_fast16_t, int_fast16_t>> order;
+  vector<int_fast16_t> order;
   vector<vector<bool>> backups;
 };
 
