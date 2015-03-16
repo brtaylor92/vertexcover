@@ -17,6 +17,9 @@ using std::istream_iterator;
 #include <numeric>
 using std::accumulate;
 
+#include <set>
+using std::set;
+
 #include <utility>
 using std::make_pair;
 using std::pair;
@@ -28,8 +31,8 @@ class MinCover {
 public:
   MinCover() = delete;
   MinCover(istream &is)
-      : in(is), N(*(in++)), M(*(in++)), G(N * N, false), force_in(N, false),
-        force_out(N, false), adjacency(N), backups(N) {
+      : in(is), N(*(in++)), M(*(in++)), G(N * N, false), adjacency(N),
+        backups(N) {
     // vector<bool> S(N, false);
     for (int_fast8_t i = 0; i < M; ++i) {
       int_fast8_t v1 = *(in++), v2 = *(in++);
@@ -53,19 +56,40 @@ public:
   MinCover(MinCover &&other) = delete;
   ~MinCover() = default;
   int_fast8_t findMin() {
-    for (auto &i : adjacency) {
-      degrees.push_back(i.size());
-    }
+    set<int_fast8_t> s;
     for (int_fast8_t i = 0; i < N; ++i) {
-      if (!degrees.at(i)) {
-        force_out.at(i) = true;
-      } else if (degrees.at(i) == 1) {
-        force_in.at(adjacency.at(i).front()) = true;
-        force_out.at(i) = true;
+      if (adjacency.at(i).size() == 1) {
+        int_fast8_t neighbor = adjacency.at(i).front();
+        adjacency.at(i).pop_back();
+        adjacency.at(neighbor).clear();
+#ifdef DEBUG
+        cout << "Found deg 1 vertex " << (int)i;
+        cout << " with neighbor " << (int)neighbor << endl;
+#endif
+        for (int j = 0; j < N; ++j) {
+          G.at(j + neighbor * N) = false;
+          G.at(neighbor + j * N) = false;
+        }
+        s.insert(neighbor);
       }
     }
+    int_fast8_t sz = s.size();
+#ifdef DEBUG
+    cout << "after degree-1 pruning: " << endl;
+    cout << (*this) << endl;
+#endif
+    bool soln = true;
+    for (auto i : G) {
+      if (i) {
+        soln = false;
+        break;
+      }
+    }
+    if (soln) {
+      return sz;
+    }
     for (int_fast8_t i = 0; i < N; ++i) {
-      order.push_back(make_pair(degrees.at(i), i));
+      order.push_back(make_pair(adjacency.at(i).size(), i));
     }
     sort(begin(order), end(order), greater<pair<int_fast8_t, int_fast8_t>>());
 #ifdef DEBUG
@@ -74,26 +98,10 @@ public:
       cout << "<" << (int)order.at(i).first << ", " << (int)order.at(i).second
            << ">" << endl;
     }
-    cout << "force_in: ";
-    for (auto i : force_in) {
-      cout << i << " ";
-    }
-    cout << endl;
-    cout << "force_out: ";
-    for (auto i : force_out) {
-      cout << i << " ";
-    }
     cout << endl;
 #endif
-    auto lb = max_sz;
-    auto rb = max_sz;
-    auto v = order.at(0).second;
-    if (!force_out.at(v)) {
-      lb = examineVertex(0, 0, true);
-    }
-    if (!force_in.at(v)) {
-      rb = examineVertex(0, 0, false);
-    }
+    auto lb = examineVertex(0, sz, true);
+    auto rb = examineVertex(0, sz, false);
     return min(lb, rb);
   }
   int_fast8_t examineVertex(int_fast8_t d, int_fast8_t sz, bool use) {
@@ -107,15 +115,8 @@ public:
     // If we're not up to at least our minimum cover size, or we didn't use
     // this vertex, we already know we need to recurse
     if (!use /*|| sz < min_sz*/) {
-      auto lb = max_sz;
-      auto rb = max_sz;
-      v = order.at(d).second;
-      if (!force_out.at(v)) {
-        lb = examineVertex(d, sz, true);
-      }
-      if (!force_in.at(v)) {
-        rb = examineVertex(d, sz, false);
-      }
+      auto lb = examineVertex(d, sz, true);
+      auto rb = examineVertex(d, sz, false);
       G.swap(backups.at(d - 1));
       return min(lb, rb);
     }
@@ -140,15 +141,8 @@ public:
     for (auto i : G) {
       // As soon as we find a remaining edge, keep looking
       if (i) {
-        auto lb = max_sz;
-        auto rb = max_sz;
-        v = order.at(d).second;
-        if (!force_out.at(v)) {
-          lb = examineVertex(d, sz, true);
-        }
-        if (!force_in.at(v)) {
-          rb = examineVertex(d, sz, false);
-        }
+        auto lb = examineVertex(d, sz, true);
+        auto rb = examineVertex(d, sz, false);
         G.swap(backups.at(d - 1));
         return min(lb, rb);
       }
@@ -182,10 +176,7 @@ private:
   int_fast8_t min_sz;
   int_fast8_t min_soln;
   vector<bool> G;
-  vector<bool> force_in;
-  vector<bool> force_out;
   vector<vector<int_fast8_t>> adjacency;
-  vector<int_fast8_t> degrees;
   vector<pair<int_fast8_t, int_fast8_t>> order;
   vector<vector<bool>> backups;
 };
