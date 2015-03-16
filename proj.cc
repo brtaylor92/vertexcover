@@ -34,8 +34,8 @@ public:
       : in(is), N(*(in++)), M(*(in++)), G(N * N, false), adjacency(N),
         backups(N) {
     // vector<bool> S(N, false);
-    for (int_fast8_t i = 0; i < M; ++i) {
-      int_fast8_t v1 = *(in++), v2 = *(in++);
+    for (int_fast16_t i = 0; i < M; ++i) {
+      int_fast16_t v1 = *(in++), v2 = *(in++);
       G.at(v1 + v2 * N) = true;
       G.at(v2 + v1 * N) = true;
       adjacency.at(v1).push_back(v2);
@@ -46,7 +46,7 @@ public:
       // S.at(v1) = true;
       // S.at(v2) = true;
     }
-    // int_fast8_t s_sz = accumulate(begin(S), end(S), 0);
+    // int_fast16_t s_sz = accumulate(begin(S), end(S), 0);
     // max_sz = min({M, N, s_sz});
     max_sz = min(M, N);
     min_sz = 1; // s_sz / 2; // This does not appear to be working
@@ -55,11 +55,11 @@ public:
   MinCover(const MinCover &other) = delete;
   MinCover(MinCover &&other) = delete;
   ~MinCover() = default;
-  int_fast8_t findMin() {
-    set<int_fast8_t> s;
-    for (int_fast8_t i = 0; i < N; ++i) {
+  int_fast16_t findMin() {
+    set<int_fast16_t> s;
+    for (int_fast16_t i = 0; i < N; ++i) {
       if (adjacency.at(i).size() == 1) {
-        int_fast8_t neighbor = adjacency.at(i).front();
+        int_fast16_t neighbor = adjacency.at(i).front();
         adjacency.at(i).pop_back();
         adjacency.at(neighbor).clear();
 #ifdef DEBUG
@@ -73,7 +73,7 @@ public:
         s.insert(neighbor);
       }
     }
-    int_fast8_t sz = s.size();
+    int_fast16_t sz = s.size();
 #ifdef DEBUG
     cout << "after degree-1 pruning: " << endl;
     cout << (*this) << endl;
@@ -88,13 +88,13 @@ public:
     if (soln) {
       return sz;
     }
-    for (int_fast8_t i = 0; i < N; ++i) {
+    for (int_fast16_t i = 0; i < N; ++i) {
       order.push_back(make_pair(adjacency.at(i).size(), i));
     }
-    sort(begin(order), end(order), greater<pair<int_fast8_t, int_fast8_t>>());
+    sort(begin(order), end(order), greater<pair<int_fast16_t, int_fast16_t>>());
 #ifdef DEBUG
     cout << "q: " << endl;
-    for (int_fast8_t i = 0; i < N; ++i) {
+    for (int_fast16_t i = 0; i < N; ++i) {
       cout << "<" << (int)order.at(i).first << ", " << (int)order.at(i).second
            << ">" << endl;
     }
@@ -104,7 +104,7 @@ public:
     auto rb = examineVertex(0, sz, false);
     return min(lb, rb);
   }
-  int_fast8_t examineVertex(int_fast8_t d, int_fast8_t sz, bool use) {
+  int_fast16_t examineVertex(int_fast16_t d, int_fast16_t sz, bool use) {
     // If we've reached the max cover size we can stop
     if (d + (use ? 1 : 2) >= N || sz + 1 >= min_soln) {
       return max_sz;
@@ -127,7 +127,7 @@ public:
     // We are including this vertex, increment the size of the solution
     ++sz;
     // Remove the edges covered by this vertex from the graph
-    for (int_fast8_t i = 0; i < N; ++i) {
+    for (int_fast16_t i = 0; i < N; ++i) {
       if (G.at(i + v * N)) {
         G.at(i + v * N) = false;
         G.at(v + i * N) = false;
@@ -158,8 +158,8 @@ public:
   }
 #ifdef DEBUG
   friend ostream &operator<<(ostream &out, const MinCover &mc) {
-    for (int_fast8_t i = 0; i < mc.N; ++i) {
-      for (int_fast8_t j = 0; j < mc.N; ++j) {
+    for (int_fast16_t i = 0; i < mc.N; ++i) {
+      for (int_fast16_t j = 0; j < mc.N; ++j) {
         out << mc.G.at(j + i * mc.N) << " ";
       }
       out << endl;
@@ -170,14 +170,14 @@ public:
 
 private:
   istream_iterator<int> in;
-  int_fast8_t N;
-  int_fast8_t M;
-  int_fast8_t max_sz;
-  int_fast8_t min_sz;
-  int_fast8_t min_soln;
+  int_fast16_t N;
+  int_fast16_t M;
+  int_fast16_t max_sz;
+  int_fast16_t min_sz;
+  int_fast16_t min_soln;
   vector<bool> G;
-  vector<vector<int_fast8_t>> adjacency;
-  vector<pair<int_fast8_t, int_fast8_t>> order;
+  vector<vector<int_fast16_t>> adjacency;
+  vector<pair<int_fast16_t, int_fast16_t>> order;
   vector<vector<bool>> backups;
 };
 
