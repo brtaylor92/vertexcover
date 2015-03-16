@@ -1,4 +1,5 @@
 #include <algorithm>
+using std::count;
 using std::min;
 
 #include <functional>
@@ -14,12 +15,6 @@ using std::ostream;
 #include <iterator>
 using std::istream_iterator;
 
-#include <numeric>
-using std::accumulate;
-
-#include <set>
-using std::set;
-
 #include <utility>
 using std::make_pair;
 using std::pair;
@@ -33,7 +28,6 @@ public:
   MinCover(istream &is)
       : in(is), N(*(in++)), M(*(in++)), G(N * N, false), adjacency(N),
         backups(N) {
-    // vector<bool> S(N, false);
     for (int_fast16_t i = 0; i < M; ++i) {
       int_fast16_t v1 = *(in++), v2 = *(in++);
       G.at(v1 + v2 * N) = true;
@@ -43,20 +37,15 @@ public:
       // Pick edges, construct set of at most 2x vertices
       // Use this to bound size of solution subsets examined
       // Thanks Prateek =)
-      // S.at(v1) = true;
-      // S.at(v2) = true;
     }
-    // int_fast16_t s_sz = accumulate(begin(S), end(S), 0);
-    // max_sz = min({M, N, s_sz});
     max_sz = min(M, N);
-    min_sz = 1; // s_sz / 2; // This does not appear to be working
     min_soln = max_sz;
   }
   MinCover(const MinCover &other) = delete;
   MinCover(MinCover &&other) = delete;
   ~MinCover() = default;
   int_fast16_t findMin() {
-    set<int_fast16_t> s;
+    vector<bool> S(N);
     for (int_fast16_t i = 0; i < N; ++i) {
       if (adjacency.at(i).size() == 1) {
         int_fast16_t neighbor = adjacency.at(i).front();
@@ -69,10 +58,10 @@ public:
             --M;
           }
         }
-        s.insert(neighbor);
+        S.at(neighbor) = true;
       }
     }
-    int_fast16_t sz = s.size();
+    int_fast16_t sz = count(begin(S), end(S), true);
     if (!M) {
       return sz;
     }
@@ -95,7 +84,7 @@ public:
     ++d;
     // If we're not up to at least our minimum cover size, or we didn't use
     // this vertex, we already know we need to recurse
-    if (!use /*|| sz < min_sz*/) {
+    if (!use) {
       auto lb = examineVertex(d, sz, true);
       auto rb = examineVertex(d, sz, false);
       G.swap(backups.at(d - 1));
@@ -134,7 +123,6 @@ private:
   int_fast16_t N;
   int_fast16_t M;
   int_fast16_t max_sz;
-  int_fast16_t min_sz;
   int_fast16_t min_soln;
   vector<bool> G;
   vector<vector<int_fast16_t>> adjacency;
