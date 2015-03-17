@@ -57,10 +57,11 @@ public:
           adjacency.at(i).pop_back();
           adjacency.at(neighbor).clear();
           for (int j = 0; j < N; ++j) {
-            if (G.at(j + neighbor * N)) {
+            if (G.at(j + neighbor * N) || G.at(neighbor + j * N)) {
               G.at(j + neighbor * N) = false;
               G.at(neighbor + j * N) = false;
-              remove(begin(adjacency.at(j)), end(adjacency.at(j)), neighbor);
+              auto e = remove(begin(adjacency.at(j)), end(adjacency.at(j)), neighbor);
+              adjacency.at(j).erase(e, end(adjacency.at(j)));
               --M;
             }
           }
@@ -145,6 +146,6 @@ private:
 
 int main() {
   MinCover mc(cin);
-  cout << static_cast<int>(mc.findMin()) << endl;
+  cout << mc.findMin() << endl;
   return 0;
 }
