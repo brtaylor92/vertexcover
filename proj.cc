@@ -1,6 +1,7 @@
 #include <algorithm>
 using std::count;
 using std::min;
+using std::remove;
 using std::transform;
 
 #include <functional>
@@ -27,8 +28,8 @@ class MinCover {
 public:
   MinCover() = delete;
   MinCover(istream &is)
-      : in(is), N(*(in++)), M(*(in++)), G(N * N, false), adjacency(N),
-        order(N), backups(N) {
+      : in(is), N(*(in++)), M(*(in++)), G(N * N, false), adjacency(N), order(N),
+        backups(N) {
     for (int_fast16_t i = 0; i < M; ++i) {
       int_fast16_t v1 = *(in++), v2 = *(in++);
       G.at(v1 + v2 * N) = true;
@@ -47,21 +48,28 @@ public:
   ~MinCover() = default;
   int_fast16_t findMin() {
     vector<bool> S(N);
-    for (int_fast16_t i = 0; i < N; ++i) {
-      if (adjacency.at(i).size() == 1) {
-        int_fast16_t neighbor = adjacency.at(i).front();
-        adjacency.at(i).pop_back();
-        adjacency.at(neighbor).clear();
-        for (int j = 0; j < N; ++j) {
-          if (G.at(j + neighbor * N)) {
-            G.at(j + neighbor * N) = false;
-            G.at(neighbor + j * N) = false;
-            --M;
+    bool foundone = false;
+    do {
+      bool foundthistime = false;
+      for (int_fast16_t i = 0; i < N; ++i) {
+        if (adjacency.at(i).size() == 1) {
+          int_fast16_t neighbor = adjacency.at(i).front();
+          adjacency.at(i).pop_back();
+          adjacency.at(neighbor).clear();
+          for (int j = 0; j < N; ++j) {
+            if (G.at(j + neighbor * N)) {
+              G.at(j + neighbor * N) = false;
+              G.at(neighbor + j * N) = false;
+              remove(begin(adjacency.at(j)), end(adjacency.at(j)), neighbor);
+              --M;
+            }
           }
+          S.at(neighbor) = true;
+          foundthistime = true;
         }
-        S.at(neighbor) = true;
       }
-    }
+      foundone = foundthistime;
+    } while (foundone);
     int_fast16_t sz = count(begin(S), end(S), true);
     if (!M) {
       return sz;
@@ -70,8 +78,10 @@ public:
     for (int_fast16_t i = 0; i < N; ++i) {
       temp_order.push_back(make_pair(adjacency.at(i).size(), i));
     }
-    sort(begin(temp_order), end(temp_order), greater<pair<int_fast16_t, int_fast16_t>>());
-    transform(begin(temp_order), end(temp_order), begin(order), [](pair<int_fast16_t, int_fast16_t> i) { return i.second; });
+    sort(begin(temp_order), end(temp_order),
+         greater<pair<int_fast16_t, int_fast16_t>>());
+    transform(begin(temp_order), end(temp_order), begin(order),
+              [](pair<int_fast16_t, int_fast16_t> i) { return i.second; });
     auto lb = examineVertex(0, sz, true);
     auto rb = examineVertex(0, sz, false);
     return min(lb, rb);
