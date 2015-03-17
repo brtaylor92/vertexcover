@@ -28,7 +28,8 @@ class MinCover {
 public:
   MinCover() = delete;
   MinCover(istream &is)
-      : in(is), N(*(in++)), M(*(in++)), G(N * N, false), backups(N) {
+      : in(is), N(*(in++)), M(*(in++)), G(N * N, false), ignored(N, false),
+        backups(N) {
     for (int_fast16_t i = 0; i < M; ++i) {
       int_fast16_t v1 = *(in++), v2 = *(in++);
       G.at(v1 + v2 * N) = true;
@@ -97,18 +98,20 @@ public:
     // If we're not up to at least our minimum cover size, or we didn't use
     // this vertex, we already know we need to recurse
     if (!use) {
+      ignored.at(v) = true;
       int max_so_far = 0;
       int next = 0;
       for (int_fast16_t i = 0; i < N; ++i) {
         int_fast16_t deg =
             count(begin(G) + i * N, begin(G) + (i + 1) * N, true);
-        if (deg > max_so_far && i != v) {
+        if (deg > max_so_far && !ignored.at(i)) {
           max_so_far = deg;
           next = i;
         }
       }
       auto lb = examineVertex(d, next, sz, true);
       auto rb = examineVertex(d, next, sz, false);
+      ignored.at(v) = false;
       G.swap(backups.at(d - 1));
       M = oldM;
       return min(lb, rb);
@@ -153,7 +156,7 @@ public:
       for (int_fast16_t i = 0; i < N; ++i) {
         int_fast16_t deg =
             count(begin(G) + i * N, begin(G) + (i + 1) * N, true);
-        if (deg > max_so_far) {
+        if (deg > max_so_far && !ignored.at(i)) {
           max_so_far = deg;
           next = i;
         }
@@ -179,6 +182,7 @@ private:
   int_fast16_t max_sz;
   int_fast16_t min_soln;
   vector<bool> G;
+  vector<bool> ignored;
   // vector<int_fast16_t> order;
   vector<vector<bool>> backups;
 };
