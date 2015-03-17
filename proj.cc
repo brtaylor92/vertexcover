@@ -93,7 +93,6 @@ public:
     }
     backups.at(d) = G;
     int_fast16_t oldM = M;
-    // auto v = order.at(d);
     ++d;
     // If we're not up to at least our minimum cover size, or we didn't use
     // this vertex, we already know we need to recurse
