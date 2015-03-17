@@ -115,6 +115,27 @@ public:
         --M;
       }
     }
+    bool foundone = false;
+    do {
+      bool foundthistime = false;
+      for (int_fast16_t i = 0; i < N; ++i) {
+        int_fast16_t deg = count(begin(G) + i * N, begin(G) + (i + 1) * N, true);
+        if (deg == 1) {
+          auto it = find(begin(G) + i * N, begin(G) + (i + 1) * N, true);
+          int_fast16_t neighbor = distance(begin(G) + i * N, it);
+          for (int j = 0; j < N; ++j) {
+            if (G.at(j + neighbor * N)) {
+              G.at(j + neighbor * N) = false;
+              G.at(neighbor + j * N) = false;
+              --M;
+            }
+          }
+          ++sz;
+          foundthistime = true;
+        }
+      }
+      foundone = foundthistime;
+    } while (foundone);
     // If we're in our acceptable range and used this vertex,
     // check if this is a cover
     if (M) {
