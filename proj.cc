@@ -28,7 +28,7 @@ class MinCover {
 public:
   MinCover() = delete;
   MinCover(istream &is)
-      : in(is), N(*(in++)), M(*(in++)), G(N * N, false), order(N), backups(N) {
+      : in(is), N(*(in++)), M(*(in++)), G(N * N, false), backups(N) {
     for (int_fast16_t i = 0; i < M; ++i) {
       int_fast16_t v1 = *(in++), v2 = *(in++);
       G.at(v1 + v2 * N) = true;
@@ -71,33 +71,44 @@ public:
     if (!M) {
       return sz;
     }
-    vector<pair<int_fast16_t, int_fast16_t>> temp_order;
+    int_fast16_t max_so_far = 0;
+    int_fast16_t next = 0;
     for (int_fast16_t i = 0; i < N; ++i) {
       int_fast16_t deg = count(begin(G) + i * N, begin(G) + (i + 1) * N, true);
-      temp_order.push_back(make_pair(deg, i));
+      if (deg > max_so_far) {
+        max_so_far = deg;
+        next = i;
+      }
     }
-    sort(begin(temp_order), end(temp_order),
-         greater<pair<int_fast16_t, int_fast16_t>>());
-    transform(begin(temp_order), end(temp_order), begin(order),
-              [](pair<int_fast16_t, int_fast16_t> i) { return i.second; });
-    auto lb = examineVertex(0, sz, true);
-    auto rb = examineVertex(0, sz, false);
+    auto lb = examineVertex(0, next, sz, true);
+    auto rb = examineVertex(0, next, sz, false);
     return min(lb, rb);
   }
-  int_fast16_t examineVertex(int_fast16_t d, int_fast16_t sz, bool use) {
+  int_fast16_t examineVertex(int_fast16_t d, int_fast16_t v, int_fast16_t sz,
+                             bool use) {
     // If we've reached the max cover size we can stop
     if (d + (use ? 1 : 2) >= N || sz + 1 >= min_soln) {
       return max_sz;
     }
     backups.at(d) = G;
     int_fast16_t oldM = M;
-    auto v = order.at(d);
+    // auto v = order.at(d);
     ++d;
     // If we're not up to at least our minimum cover size, or we didn't use
     // this vertex, we already know we need to recurse
     if (!use) {
-      auto lb = examineVertex(d, sz, true);
-      auto rb = examineVertex(d, sz, false);
+      int max_so_far = 0;
+      int next = 0;
+      for (int_fast16_t i = 0; i < N; ++i) {
+        int_fast16_t deg =
+            count(begin(G) + i * N, begin(G) + (i + 1) * N, true);
+        if (deg > max_so_far && i != v) {
+          max_so_far = deg;
+          next = i;
+        }
+      }
+      auto lb = examineVertex(d, next, sz, true);
+      auto rb = examineVertex(d, next, sz, false);
       G.swap(backups.at(d - 1));
       M = oldM;
       return min(lb, rb);
@@ -137,8 +148,18 @@ public:
     // If we're in our acceptable range and used this vertex,
     // check if this is a cover
     if (M) {
-      auto lb = examineVertex(d, sz, true);
-      auto rb = examineVertex(d, sz, false);
+      int max_so_far = 0;
+      int next = 0;
+      for (int_fast16_t i = 0; i < N; ++i) {
+        int_fast16_t deg =
+            count(begin(G) + i * N, begin(G) + (i + 1) * N, true);
+        if (deg > max_so_far) {
+          max_so_far = deg;
+          next = i;
+        }
+      }
+      auto lb = examineVertex(d, next, sz, true);
+      auto rb = examineVertex(d, next, sz, false);
       G.swap(backups.at(d - 1));
       M = oldM;
       return min(lb, rb);
@@ -158,7 +179,7 @@ private:
   int_fast16_t max_sz;
   int_fast16_t min_soln;
   vector<bool> G;
-  vector<int_fast16_t> order;
+  // vector<int_fast16_t> order;
   vector<vector<bool>> backups;
 };
 
