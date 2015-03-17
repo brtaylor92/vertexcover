@@ -28,14 +28,11 @@ class MinCover {
 public:
   MinCover() = delete;
   MinCover(istream &is)
-      : in(is), N(*(in++)), M(*(in++)), G(N * N, false), adjacency(N), order(N),
-        backups(N) {
+      : in(is), N(*(in++)), M(*(in++)), G(N * N, false), order(N), backups(N) {
     for (int_fast16_t i = 0; i < M; ++i) {
       int_fast16_t v1 = *(in++), v2 = *(in++);
       G.at(v1 + v2 * N) = true;
       G.at(v2 + v1 * N) = true;
-      adjacency.at(v1).push_back(v2);
-      adjacency.at(v2).push_back(v1);
       // Pick edges, construct set of at most 2x vertices
       // Use this to bound size of solution subsets examined
       // Thanks Prateek =)
@@ -52,16 +49,15 @@ public:
     do {
       bool foundthistime = false;
       for (int_fast16_t i = 0; i < N; ++i) {
-        if (adjacency.at(i).size() == 1) {
-          int_fast16_t neighbor = adjacency.at(i).front();
-          adjacency.at(i).pop_back();
-          adjacency.at(neighbor).clear();
+        int_fast16_t deg =
+            count(begin(G) + i * N, begin(G) + (i + 1) * N, true);
+        if (deg == 1) {
+          auto it = find(begin(G) + i * N, begin(G) + (i + 1) * N, true);
+          int_fast16_t neighbor = distance(begin(G) + i * N, it);
           for (int j = 0; j < N; ++j) {
             if (G.at(j + neighbor * N) || G.at(neighbor + j * N)) {
               G.at(j + neighbor * N) = false;
               G.at(neighbor + j * N) = false;
-              auto e = remove(begin(adjacency.at(j)), end(adjacency.at(j)), neighbor);
-              adjacency.at(j).erase(e, end(adjacency.at(j)));
               --M;
             }
           }
@@ -77,7 +73,8 @@ public:
     }
     vector<pair<int_fast16_t, int_fast16_t>> temp_order;
     for (int_fast16_t i = 0; i < N; ++i) {
-      temp_order.push_back(make_pair(adjacency.at(i).size(), i));
+      int_fast16_t deg = count(begin(G) + i * N, begin(G) + (i + 1) * N, true);
+      temp_order.push_back(make_pair(deg, i));
     }
     sort(begin(temp_order), end(temp_order),
          greater<pair<int_fast16_t, int_fast16_t>>());
@@ -119,7 +116,8 @@ public:
     do {
       bool foundthistime = false;
       for (int_fast16_t i = 0; i < N; ++i) {
-        int_fast16_t deg = count(begin(G) + i * N, begin(G) + (i + 1) * N, true);
+        int_fast16_t deg =
+            count(begin(G) + i * N, begin(G) + (i + 1) * N, true);
         if (deg == 1) {
           auto it = find(begin(G) + i * N, begin(G) + (i + 1) * N, true);
           int_fast16_t neighbor = distance(begin(G) + i * N, it);
@@ -160,7 +158,6 @@ private:
   int_fast16_t max_sz;
   int_fast16_t min_soln;
   vector<bool> G;
-  vector<vector<int_fast16_t>> adjacency;
   vector<int_fast16_t> order;
   vector<vector<bool>> backups;
 };
