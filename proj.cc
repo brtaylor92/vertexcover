@@ -19,9 +19,9 @@ class MinCover {
 public:
   MinCover() = delete;
   MinCover(istream &is)
-      : in(is), N(*(in)), M(*(++in)), G(N * N, false), backups(N) {
+      : in(is), N(*in), M(*++in), G(N * N, false), backups(N) {
     for (int32_t i = 0; i < M; ++i) {
-      int32_t v1 = *(++in), v2 = *(++in);
+      int32_t v1 = *++in, v2 = *++in;
       G.at(v1 + v2 * N) = true;
       G.at(v2 + v1 * N) = true;
     }
@@ -31,13 +31,10 @@ public:
   MinCover(MinCover &&other) = delete;
   ~MinCover() = default;
   int32_t findMin() {
-    int32_t deg = -1;
-    int32_t v1 = -1;
-    int32_t v2 = -1;
+    int32_t deg = -1, v1 = -1, v2 = -1;
     for (int32_t i = 0; i < N * N; ++i) {
       if (G.at(i)) {
-        int32_t new_v1 = i / N;
-        int32_t new_v2 = i % N;
+        int32_t new_v1 = i / N, new_v2 = i % N;
         int32_t new_deg =
             count(begin(G) + new_v1 * N, begin(G) + (new_v1 + 1) * N, true) +
             count(begin(G) + new_v2 * N, begin(G) + (new_v2 + 1) * N, true);
@@ -90,13 +87,10 @@ public:
         M = oldM;
         return N;
       }
-      int32_t deg = -1;
-      int32_t v1 = -1;
-      int32_t v2 = -1;
+      int32_t deg = -1, v1 = -1, v2 = -1;
       for (int32_t i = 0; i < N * N; ++i) {
         if (G.at(i)) {
-          int32_t new_v1 = i / N;
-          int32_t new_v2 = i % N;
+          int32_t new_v1 = i / N, new_v2 = i % N;
           int32_t new_deg =
               count(begin(G) + new_v1 * N, begin(G) + (new_v1 + 1) * N, true) +
               count(begin(G) + new_v2 * N, begin(G) + (new_v2 + 1) * N, true);
@@ -123,9 +117,7 @@ public:
 
 private:
   istream_iterator<int32_t> in;
-  int32_t N;
-  int32_t M;
-  int32_t min_soln;
+  int32_t N, M, min_soln;
   vector<bool> G;
   vector<vector<bool>> backups;
 };
