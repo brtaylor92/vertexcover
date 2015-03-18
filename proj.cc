@@ -19,9 +19,9 @@ class MinCover {
 public:
   MinCover() = delete;
   MinCover(istream &is)
-      : in(is), N(*(in++)), M(*(in++)), G(N * N, false), backups(N) {
+      : in(is), N(*(in)), M(*(++in)), G(N * N, false), backups(N) {
     for (int_fast16_t i = 0; i < M; ++i) {
-      int_fast16_t v1 = *(in++), v2 = *(in++);
+      int_fast16_t v1 = *(++in), v2 = *(++in);
       G.at(v1 + v2 * N) = true;
       G.at(v2 + v1 * N) = true;
     }
@@ -31,14 +31,24 @@ public:
   MinCover(MinCover &&other) = delete;
   ~MinCover() = default;
   int_fast16_t findMin() {
-    for (int i = 0; i < N * N; ++i) {
+    int_fast16_t deg = 0;
+    int_fast16_t v1 = 0;
+    int_fast16_t v2 = 0;
+    for (int_fast16_t i = 0; i < N * N; ++i) {
       if (G.at(i)) {
-        auto lb = examineVertex(i / N, 0, 0);
-        auto rb = examineVertex(i % N, 0, 0);
-        return min(lb, rb);
+        int_fast16_t new_v1 = i / N;
+        int_fast16_t new_v2 = i % N;
+        int_fast16_t new_deg = count(begin(G) + new_v1 * N, begin(G) + (new_v1 + 1) * N, true) + count(begin(G) + new_v2 * N, begin(G) + (new_v2 + 1) * N, true);
+        if (new_deg > deg) {
+          v1 = new_v1;
+          v2 = new_v2;
+          deg = new_deg;
+        }
       }
     }
-    return N;
+    auto lb = examineVertex(v1, 0, 0);
+    auto rb = examineVertex(v2, 0, 0);
+    return min(lb, rb);
   }
   int_fast16_t examineVertex(int_fast16_t v, int_fast16_t d, int_fast16_t sz) {
     backups.at(d) = G;
@@ -83,15 +93,26 @@ public:
         M = oldM;
         return N;
       }
-      for (int i = 0; i < N * N; ++i) {
+      int_fast16_t deg = 0;
+      int_fast16_t v1 = 0;
+      int_fast16_t v2 = 0;
+      for (int_fast16_t i = 0; i < N * N; ++i) {
         if (G.at(i)) {
-          auto lb = examineVertex(i / N, d, sz);
-          auto rb = examineVertex(i % N, d, sz);
-          G.swap(backups.at(d - 1));
-          M = oldM;
-          return min(lb, rb);
+          int_fast16_t new_v1 = i / N;
+          int_fast16_t new_v2 = i % N;
+          int_fast16_t new_deg = count(begin(G) + new_v1 * N, begin(G) + (new_v1 + 1) * N, true) + count(begin(G) + new_v2 * N, begin(G) + (new_v2 + 1) * N, true);
+          if (new_deg > deg) {
+            v1 = new_v1;
+            v2 = new_v2;
+            deg = new_deg;
+          }
         }
       }
+      auto lb = examineVertex(v1, d, sz);
+      auto rb = examineVertex(v2, d, sz);
+      G.swap(backups.at(d - 1));
+      M = oldM;
+      return min(lb, rb);
     }
     if (sz < min_soln) {
       min_soln = sz;
