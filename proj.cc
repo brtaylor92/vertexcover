@@ -20,8 +20,8 @@ public:
   MinCover() = delete;
   MinCover(istream &is)
       : in(is), N(*(in)), M(*(++in)), G(N * N, false), backups(N) {
-    for (int_fast16_t i = 0; i < M; ++i) {
-      int_fast16_t v1 = *(++in), v2 = *(++in);
+    for (int32_t i = 0; i < M; ++i) {
+      int32_t v1 = *(++in), v2 = *(++in);
       G.at(v1 + v2 * N) = true;
       G.at(v2 + v1 * N) = true;
     }
@@ -30,15 +30,15 @@ public:
   MinCover(const MinCover &other) = delete;
   MinCover(MinCover &&other) = delete;
   ~MinCover() = default;
-  int_fast16_t findMin() {
-    int_fast16_t deg = -1;
-    int_fast16_t v1 = -1;
-    int_fast16_t v2 = -1;
-    for (int_fast16_t i = 0; i < N * N; ++i) {
+  int32_t findMin() {
+    int32_t deg = -1;
+    int32_t v1 = -1;
+    int32_t v2 = -1;
+    for (int32_t i = 0; i < N * N; ++i) {
       if (G.at(i)) {
-        int_fast16_t new_v1 = i / N;
-        int_fast16_t new_v2 = i % N;
-        int_fast16_t new_deg =
+        int32_t new_v1 = i / N;
+        int32_t new_v2 = i % N;
+        int32_t new_deg =
             count(begin(G) + new_v1 * N, begin(G) + (new_v1 + 1) * N, true) +
             count(begin(G) + new_v2 * N, begin(G) + (new_v2 + 1) * N, true);
         if (new_deg > deg) {
@@ -52,13 +52,13 @@ public:
     auto rb = examineVertex(v2, 0, 0);
     return min(lb, rb);
   }
-  int_fast16_t examineVertex(int_fast16_t v, int_fast16_t d, int_fast16_t sz) {
+  int32_t examineVertex(int32_t v, int32_t d, int32_t sz) {
     backups.at(d) = G;
-    int_fast16_t oldM = M;
+    int32_t oldM = M;
     ++sz;
     ++d;
     // Remove the edges covered by this vertex from the graph
-    for (int_fast16_t i = 0; i < N; ++i) {
+    for (int32_t i = 0; i < N; ++i) {
       if (G.at(i + v * N)) {
         G.at(i + v * N) = false;
         G.at(v + i * N) = false;
@@ -68,13 +68,12 @@ public:
     bool foundone = false;
     do {
       foundone = false;
-      for (int_fast16_t i = 0; i < N; ++i) {
-        int_fast16_t deg =
-            count(begin(G) + i * N, begin(G) + (i + 1) * N, true);
+      for (int32_t i = 0; i < N; ++i) {
+        int32_t deg = count(begin(G) + i * N, begin(G) + (i + 1) * N, true);
         if (deg == 1) {
           auto it = find(begin(G) + i * N, begin(G) + (i + 1) * N, true);
-          int_fast16_t neighbor = distance(begin(G) + i * N, it);
-          for (int_fast16_t j = 0; j < N; ++j) {
+          int32_t neighbor = distance(begin(G) + i * N, it);
+          for (int32_t j = 0; j < N; ++j) {
             if (G.at(j + neighbor * N)) {
               G.at(j + neighbor * N) = false;
               G.at(neighbor + j * N) = false;
@@ -95,14 +94,14 @@ public:
         M = oldM;
         return N;
       }
-      int_fast16_t deg = -1;
-      int_fast16_t v1 = -1;
-      int_fast16_t v2 = -1;
-      for (int_fast16_t i = 0; i < N * N; ++i) {
+      int32_t deg = -1;
+      int32_t v1 = -1;
+      int32_t v2 = -1;
+      for (int32_t i = 0; i < N * N; ++i) {
         if (G.at(i)) {
-          int_fast16_t new_v1 = i / N;
-          int_fast16_t new_v2 = i % N;
-          int_fast16_t new_deg =
+          int32_t new_v1 = i / N;
+          int32_t new_v2 = i % N;
+          int32_t new_deg =
               count(begin(G) + new_v1 * N, begin(G) + (new_v1 + 1) * N, true) +
               count(begin(G) + new_v2 * N, begin(G) + (new_v2 + 1) * N, true);
           if (new_deg > deg) {
@@ -127,10 +126,10 @@ public:
   }
 
 private:
-  istream_iterator<int> in;
-  int_fast16_t N;
-  int_fast16_t M;
-  int_fast16_t min_soln;
+  istream_iterator<int32_t> in;
+  int32_t N;
+  int32_t M;
+  int32_t min_soln;
   vector<bool> G;
   vector<vector<bool>> backups;
 };
