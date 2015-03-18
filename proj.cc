@@ -5,9 +5,7 @@ using std::min;
 #include <iostream>
 using std::cin;
 using std::cout;
-using std::endl;
 using std::istream;
-using std::ostream;
 
 #include <iterator>
 using std::istream_iterator;
@@ -116,5 +114,5 @@ private:
 
 int main() {
   MinCover mc(cin);
-  cout << mc.findMin() << endl;
+  cout << mc.findMin() << "\n";
 }
