@@ -65,7 +65,8 @@ public:
     }
     if (M) {
       if (sz + 1 >= min_soln) {
-
+        G.swap(backups.at(d - 1));
+        M = oldM;
         return N;
       }
       int32_t deg = -1, v1 = -1, v2 = -1;
