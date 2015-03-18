@@ -1,11 +1,6 @@
 #include <algorithm>
 using std::count;
 using std::min;
-using std::remove;
-using std::transform;
-
-#include <functional>
-using std::greater;
 
 #include <iostream>
 using std::cin;
@@ -17,10 +12,6 @@ using std::ostream;
 #include <iterator>
 using std::istream_iterator;
 
-#include <utility>
-using std::make_pair;
-using std::pair;
-
 #include <vector>
 using std::vector;
 
@@ -28,8 +19,7 @@ class MinCover {
 public:
   MinCover() = delete;
   MinCover(istream &is)
-      : in(is), N(*(in++)), M(*(in++)), G(N * N, false), ignored(N, false),
-        backups(N) {
+      : in(is), N(*(in++)), M(*(in++)), G(N * N, false), backups(N) {
     for (int_fast16_t i = 0; i < M; ++i) {
       int_fast16_t v1 = *(in++), v2 = *(in++);
       G.at(v1 + v2 * N) = true;
@@ -45,78 +35,28 @@ public:
   MinCover(MinCover &&other) = delete;
   ~MinCover() = default;
   int_fast16_t findMin() {
-    vector<bool> S(N);
-    bool foundone = false;
-    do {
-      bool foundthistime = false;
-      for (int_fast16_t i = 0; i < N; ++i) {
-        int_fast16_t deg =
-            count(begin(G) + i * N, begin(G) + (i + 1) * N, true);
-        if (deg == 1) {
-          auto it = find(begin(G) + i * N, begin(G) + (i + 1) * N, true);
-          int_fast16_t neighbor = distance(begin(G) + i * N, it);
-          for (int j = 0; j < N; ++j) {
-            if (G.at(j + neighbor * N) || G.at(neighbor + j * N)) {
-              G.at(j + neighbor * N) = false;
-              G.at(neighbor + j * N) = false;
-              --M;
-            }
-          }
-          S.at(neighbor) = true;
-          foundthistime = true;
-        }
-      }
-      foundone = foundthistime;
-    } while (foundone);
-    int_fast16_t sz = count(begin(S), end(S), true);
-    if (!M) {
-      return sz;
-    }
-    int_fast16_t max_so_far = 0;
-    int_fast16_t next = 0;
-    for (int_fast16_t i = 0; i < N; ++i) {
-      int_fast16_t deg = count(begin(G) + i * N, begin(G) + (i + 1) * N, true);
-      if (deg > max_so_far) {
-        max_so_far = deg;
-        next = i;
+    int_fast16_t v1 = -1;
+    int_fast16_t v2 = -1;
+    for (int i = 0; i < N * N; ++i) {
+      if (G.at(i)) {
+        v1 = i / N;
+        v2 = i % N;
+        break;
       }
     }
-    auto lb = examineVertex(0, next, sz, true);
-    auto rb = examineVertex(0, next, sz, false);
+    auto lb = examineVertex(v1, 0, 0);
+    auto rb = examineVertex(v2, 0, 0);
     return min(lb, rb);
   }
-  int_fast16_t examineVertex(int_fast16_t d, int_fast16_t v, int_fast16_t sz,
-                             bool use) {
+  int_fast16_t examineVertex(int_fast16_t v, int_fast16_t d, int_fast16_t sz) {
     // If we've reached the max cover size we can stop
-    if (d + (use ? 1 : 2) >= N || sz + 1 >= min_soln) {
+    if (sz + 1 >= min_soln) {
       return max_sz;
     }
     backups.at(d) = G;
     int_fast16_t oldM = M;
-    ++d;
-    // If we're not up to at least our minimum cover size, or we didn't use
-    // this vertex, we already know we need to recurse
-    if (!use) {
-      ignored.at(v) = true;
-      int max_so_far = 0;
-      int next = 0;
-      for (int_fast16_t i = 0; i < N; ++i) {
-        int_fast16_t deg =
-            count(begin(G) + i * N, begin(G) + (i + 1) * N, true);
-        if (deg > max_so_far && !ignored.at(i)) {
-          max_so_far = deg;
-          next = i;
-        }
-      }
-      auto lb = examineVertex(d, next, sz, true);
-      auto rb = examineVertex(d, next, sz, false);
-      ignored.at(v) = false;
-      G.swap(backups.at(d - 1));
-      M = oldM;
-      return min(lb, rb);
-    }
-    // We are including this vertex, increment the size of the solution
     ++sz;
+    ++d;
     // Remove the edges covered by this vertex from the graph
     for (int_fast16_t i = 0; i < N; ++i) {
       if (G.at(i + v * N)) {
@@ -150,18 +90,17 @@ public:
     // If we're in our acceptable range and used this vertex,
     // check if this is a cover
     if (M) {
-      int max_so_far = 0;
-      int next = 0;
-      for (int_fast16_t i = 0; i < N; ++i) {
-        int_fast16_t deg =
-            count(begin(G) + i * N, begin(G) + (i + 1) * N, true);
-        if (deg > max_so_far && !ignored.at(i)) {
-          max_so_far = deg;
-          next = i;
+      int_fast16_t v1 = -1;
+      int_fast16_t v2 = -1;
+      for (int i = 0; i < N * N; ++i) {
+        if (G.at(i)) {
+          v1 = i / N;
+          v2 = i % N;
+          break;
         }
       }
-      auto lb = examineVertex(d, next, sz, true);
-      auto rb = examineVertex(d, next, sz, false);
+      auto lb = examineVertex(v1, d, sz);
+      auto rb = examineVertex(v2, d, sz);
       G.swap(backups.at(d - 1));
       M = oldM;
       return min(lb, rb);
@@ -181,8 +120,6 @@ private:
   int_fast16_t max_sz;
   int_fast16_t min_soln;
   vector<bool> G;
-  vector<bool> ignored;
-  // vector<int_fast16_t> order;
   vector<vector<bool>> backups;
 };
 
