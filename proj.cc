@@ -57,7 +57,6 @@ public:
     int32_t oldM = M;
     ++sz;
     ++d;
-    // Remove the edges covered by this vertex from the graph
     for (int32_t i = 0; i < N; ++i) {
       if (G.at(i + v * N)) {
         G.at(i + v * N) = false;
@@ -85,10 +84,7 @@ public:
         }
       }
     } while (foundone);
-    // If we're in our acceptable range and used this vertex,
-    // check if this is a cover
     if (M) {
-      // If we've reached the max cover size we can stop
       if (sz + 1 >= min_soln) {
         G.swap(backups.at(d - 1));
         M = oldM;
