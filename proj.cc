@@ -38,7 +38,9 @@ public:
       if (G.at(i)) {
         int_fast16_t new_v1 = i / N;
         int_fast16_t new_v2 = i % N;
-        int_fast16_t new_deg = count(begin(G) + new_v1 * N, begin(G) + (new_v1 + 1) * N, true) + count(begin(G) + new_v2 * N, begin(G) + (new_v2 + 1) * N, true);
+        int_fast16_t new_deg =
+            count(begin(G) + new_v1 * N, begin(G) + (new_v1 + 1) * N, true) +
+            count(begin(G) + new_v2 * N, begin(G) + (new_v2 + 1) * N, true);
         if (new_deg > deg) {
           v1 = new_v1;
           v2 = new_v2;
@@ -100,7 +102,9 @@ public:
         if (G.at(i)) {
           int_fast16_t new_v1 = i / N;
           int_fast16_t new_v2 = i % N;
-          int_fast16_t new_deg = count(begin(G) + new_v1 * N, begin(G) + (new_v1 + 1) * N, true) + count(begin(G) + new_v2 * N, begin(G) + (new_v2 + 1) * N, true);
+          int_fast16_t new_deg =
+              count(begin(G) + new_v1 * N, begin(G) + (new_v1 + 1) * N, true) +
+              count(begin(G) + new_v2 * N, begin(G) + (new_v2 + 1) * N, true);
           if (new_deg > deg) {
             v1 = new_v1;
             v2 = new_v2;
