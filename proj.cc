@@ -31,9 +31,9 @@ public:
   MinCover(MinCover &&other) = delete;
   ~MinCover() = default;
   int_fast16_t findMin() {
-    int_fast16_t deg = 0;
-    int_fast16_t v1 = 0;
-    int_fast16_t v2 = 0;
+    int_fast16_t deg = -1;
+    int_fast16_t v1 = -1;
+    int_fast16_t v2 = -1;
     for (int_fast16_t i = 0; i < N * N; ++i) {
       if (G.at(i)) {
         int_fast16_t new_v1 = i / N;
@@ -93,9 +93,9 @@ public:
         M = oldM;
         return N;
       }
-      int_fast16_t deg = 0;
-      int_fast16_t v1 = 0;
-      int_fast16_t v2 = 0;
+      int_fast16_t deg = -1;
+      int_fast16_t v1 = -1;
+      int_fast16_t v2 = -1;
       for (int_fast16_t i = 0; i < N * N; ++i) {
         if (G.at(i)) {
           int_fast16_t new_v1 = i / N;
