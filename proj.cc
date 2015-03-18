@@ -41,10 +41,6 @@ public:
     return N;
   }
   int_fast16_t examineVertex(int_fast16_t v, int_fast16_t d, int_fast16_t sz) {
-    // If we've reached the max cover size we can stop
-    if (sz + 1 >= min_soln) {
-      return N;
-    }
     backups.at(d) = G;
     int_fast16_t oldM = M;
     ++sz;
@@ -81,6 +77,12 @@ public:
     // If we're in our acceptable range and used this vertex,
     // check if this is a cover
     if (M) {
+      // If we've reached the max cover size we can stop
+      if (sz + 1 >= min_soln) {
+        G.swap(backups.at(d - 1));
+        M = oldM;
+        return N;
+      }
       for (int i = 0; i < N * N; ++i) {
         if (G.at(i)) {
           auto lb = examineVertex(i / N, d, sz);
@@ -111,5 +113,4 @@ private:
 int main() {
   MinCover mc(cin);
   cout << mc.findMin() << endl;
-  return 0;
 }
