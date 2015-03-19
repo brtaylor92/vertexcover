@@ -36,7 +36,7 @@ public:
     for (int32_t i = 0; i < N * N; ++i) {
       if (G.at(i)) {
         int32_t new_v1 = i / N, new_v2 = i % N;
-        int32_t new_deg = getDegree(new_v1) + getDegree(new_v2);
+        int32_t new_deg = degrees.at(new_v1) + degrees.at(new_v2);
         if (new_deg > deg) {
           v1 = new_v1;
           v2 = new_v2;
@@ -61,38 +61,33 @@ public:
         if (degrees.at(i) == 1) {
           ++sz;
           foundone = true;
-          int32_t idx = -1;
           for (int32_t j = 0; j < N; ++j) {
             if (G.at(j + i * N)) {
-              idx = j;
+              removeVertex(j);
               break;
             }
           }
-          removeVertex(idx);
         }
       }
     }
     if (M) {
-      int32_t deg = -1, v1 = -1, v2 = -1, v1_deg = -1, v2_deg = -1;
+      int32_t deg = -1, v1 = -1, v2 = -1;
       for (int32_t i = 0; i < N * N; ++i) {
         if (G.at(i)) {
           int32_t new_v1 = i / N, new_v2 = i % N;
-          int32_t new_v1_deg = getDegree(new_v1);
-          int32_t new_v2_deg = getDegree(new_v2);
-          if (new_v1_deg + new_v2_deg > deg) {
+          int32_t new_deg = degrees.at(new_v1) + degrees.at(new_v2);
+          if (new_deg > deg) {
             v1 = new_v1;
             v2 = new_v2;
-            v1_deg = new_v1_deg;
-            v2_deg = new_v2_deg;
-            deg = v1_deg + v2_deg;
+            deg = new_deg;
           }
         }
       }
       auto lb = N, rb = N;
-      if (M / v1_deg + sz < min_soln) {
+      if (M / degrees.at(v1) + sz < min_soln) {
         lb = examineVertex(v1, d, sz);
       }
-      if (M / v2_deg + sz < min_soln) {
+      if (M / degrees.at(v2) + sz < min_soln) {
         rb = examineVertex(v2, d, sz);
       }
       degrees.swap(backup_degrees.at(d - 1));
@@ -119,7 +114,6 @@ public:
       }
     }
   }
-  inline int32_t getDegree(int32_t v) { return degrees.at(v); }
 
 private:
   istream_iterator<int32_t> in;
