@@ -33,31 +33,8 @@ public:
   MinCover(MinCover &&other) = delete;
   ~MinCover() = default;
   int32_t findMin() {
-    int32_t deg = -1, v = -1;
-    auto deg_cmp = [&](int32_t lhs, int32_t rhs) {
-      return degrees.at(lhs) < degrees.at(rhs);
-    };
-    for (int32_t i = 0; i < N; ++i) {
-      for (int32_t j = 0; j < N; ++j) {
-        if (G.at(j + i * N)) {
-          int32_t new_deg = degrees.at(i) + degrees.at(j);
-          if (new_deg > deg) {
-            v = max(i, j, deg_cmp);
-            deg = new_deg;
-          }
-        }
-      }
-    }
-    vector<int32_t> lv;
-    for (int32_t i = 0; i < N; ++i) {
-      if (G.at(i + v * N)) {
-        lv.push_back(i);
-      }
-    }
-    vector<int32_t> rv(1, v);
-    auto lb = examineVertex(lv, 0, 0);
-    auto rb = examineVertex(rv, 0, 0);
-    return min(lb, rb);
+    vector<int32_t> v;
+    return examineVertex(v, 0, 0);
   }
   int32_t examineVertex(vector<int32_t> &vertices, int32_t d, int32_t sz) {
     backup_degrees.at(d) = degrees;
@@ -152,5 +129,6 @@ private:
 
 int main() {
   MinCover mc(cin);
+  vector<int32_t> v;
   cout << mc.findMin() << endl;
 }
