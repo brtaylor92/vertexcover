@@ -1,5 +1,6 @@
 #include <algorithm>
 using std::count;
+using std::max;
 using std::min;
 
 #include <iostream>
@@ -18,7 +19,7 @@ class MinCover {
 public:
   MinCover(istream &is)
       : in(is), N(*in), M(*++in), min_soln(N), G(N * N, false), degrees(N),
-        backups(N), backup_degrees(N) {
+        backups(N, vector<bool>(N)), backup_degrees(N, vector<int32_t>(N)) {
     for (int32_t i = 0; i < M; ++i) {
       int32_t v1 = *++in, v2 = *++in;
       G.at(v1 + v2 * N) = true;
@@ -33,27 +34,39 @@ public:
   ~MinCover() = default;
   int32_t findMin() {
     int32_t deg = -1, v1 = -1, v2 = -1;
+    auto deg_cmp = [&](int32_t lhs, int32_t rhs) {
+      return degrees.at(lhs) < degrees.at(rhs);
+    };
     for (int32_t i = 0; i < N * N; ++i) {
       if (G.at(i)) {
         int32_t new_v1 = i / N, new_v2 = i % N;
         int32_t new_deg = degrees.at(new_v1) + degrees.at(new_v2);
         if (new_deg > deg) {
-          v1 = new_v1;
-          v2 = new_v2;
+          v1 = max(new_v1, new_v2, deg_cmp);
+          v2 = min(new_v1, new_v2, deg_cmp);
           deg = new_deg;
         }
       }
     }
-    auto lb = examineVertex(v1, 0, 0);
-    auto rb = examineVertex(v2, 0, 0);
+    vector<int32_t> lv;
+    for (int32_t i = 0; i < N; ++i) {
+      if (G.at(i + v1 * N)) {
+        lv.push_back(i);
+      }
+    }
+    vector<int32_t> rv(1, v1);
+    auto lb = examineVertex(lv, 0, 0);
+    auto rb = examineVertex(rv, 0, 0);
     return min(lb, rb);
   }
-  int32_t examineVertex(int32_t v, int32_t d, int32_t sz) {
+  int32_t examineVertex(vector<int32_t> &v, int32_t d, int32_t sz) {
     backup_degrees.at(d) = degrees;
     backups.at(d++) = G;
     int32_t oldM = M;
-    ++sz;
-    removeVertex(v);
+    for (auto i : v) {
+      removeVertex(i);
+      ++sz;
+    }
     bool foundone = true;
     while (foundone) {
       foundone = false;
@@ -74,21 +87,35 @@ public:
       int32_t deg = -1, v1 = -1, v2 = -1;
       for (int32_t i = 0; i < N * N; ++i) {
         if (G.at(i)) {
+          auto deg_cmp = [&](int32_t lhs, int32_t rhs) {
+            return degrees.at(lhs) < degrees.at(rhs);
+          };
           int32_t new_v1 = i / N, new_v2 = i % N;
           int32_t new_deg = degrees.at(new_v1) + degrees.at(new_v2);
           if (new_deg > deg) {
-            v1 = new_v1;
-            v2 = new_v2;
+            v1 = max(new_v1, new_v2, deg_cmp);
+            v2 = min(new_v1, new_v2, deg_cmp);
             deg = new_deg;
           }
         }
       }
-      auto lb = N, rb = N;
-      if (M / degrees.at(v1) + sz < min_soln) {
-        lb = examineVertex(v1, d, sz);
+      vector<int32_t> lv;
+      for (int32_t i = 0; i < N; ++i) {
+        if (G.at(i + v1 * N)) {
+          lv.push_back(i);
+        }
       }
-      if (M / degrees.at(v2) + sz < min_soln) {
-        rb = examineVertex(v2, d, sz);
+      vector<int32_t> rv(1, v1);
+      auto lb = N, rb = N;
+      int32_t ldeg = 0;
+      for (auto i : lv) {
+        ldeg += degrees.at(i);
+      }
+      if (static_cast<int32_t>(lv.size()) + sz < min_soln) {
+        lb = examineVertex(lv, d, sz);
+      }
+      if (M / degrees.at(v1) + sz < min_soln) {
+        rb = examineVertex(rv, d, sz);
       }
       degrees.swap(backup_degrees.at(d - 1));
       G.swap(backups.at(d - 1));
