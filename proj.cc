@@ -18,8 +18,8 @@ using std::vector;
 class MinCover {
 public:
   MinCover(istream &is)
-      : in(is), N(*in), M(*++in), min_soln(N), G(N * N, false), degrees(N),
-        backups(N, vector<bool>(N)), backup_degrees(N, vector<int32_t>(N)) {
+      : in(is), N(*in), M(*++in), minSoln(N), G(N * N, false), degrees(N),
+        backupGs(N, vector<bool>(N)), backupDegrees(N, vector<int32_t>(N)) {
     for (int32_t i = 0; i < M; ++i) {
       int32_t v1 = *++in, v2 = *++in;
       G.at(v1 + v2 * N) = true;
@@ -29,16 +29,14 @@ public:
       degrees.at(i) = count(begin(G) + i * N, begin(G) + (i + 1) * N, true);
     }
   }
-  MinCover(const MinCover &other) = delete;
-  MinCover(MinCover &&other) = delete;
   ~MinCover() = default;
-  int32_t findMin() {
+  int32_t findMinCover() {
     vector<int32_t> v;
-    return examineVertex(v, 0, 0);
+    return removeVertices(v, 0, 0);
   }
-  int32_t examineVertex(vector<int32_t> &vertices, int32_t d, int32_t sz) {
-    backup_degrees.at(d) = degrees;
-    backups.at(d++) = G;
+  int32_t removeVertices(vector<int32_t> &vertices, int32_t d, int32_t sz) {
+    backupDegrees.at(d) = degrees;
+    backupGs.at(d++) = G;
     int32_t oldM = M;
     sz += vertices.size();
     for (auto i : vertices) {
@@ -49,10 +47,10 @@ public:
     if (M) {
       int32_t lb = N, rb = N, deg = -1, v = -1;
       for (int32_t i = 0; i < N; ++i) {
-        int32_t new_deg = degrees.at(i);
-        if (new_deg > deg) {
+        int32_t newDeg = degrees.at(i);
+        if (newDeg > deg) {
           v = i;
-          deg = new_deg;
+          deg = newDeg;
         }
       }
       vector<int32_t> lv;
@@ -67,22 +65,22 @@ public:
       for (auto i : lv) {
         ldeg += degrees.at(i);
       }
-      if (static_cast<int32_t>(lv.size()) + sz < min_soln) {
-        lb = examineVertex(lv, d, sz);
+      if (static_cast<int32_t>(lv.size()) + sz < minSoln) {
+        lb = removeVertices(lv, d, sz);
       }
-      if (M / degrees.at(v) + sz < min_soln) {
-        rb = examineVertex(rv, d, sz);
+      if (M / degrees.at(v) + sz < minSoln) {
+        rb = removeVertices(rv, d, sz);
       }
-      degrees.swap(backup_degrees.at(d - 1));
-      G.swap(backups.at(d - 1));
+      degrees.swap(backupDegrees.at(d - 1));
+      G.swap(backupGs.at(d - 1));
       M = oldM;
       return min(lb, rb);
     }
-    if (sz < min_soln) {
-      min_soln = sz;
+    if (sz < minSoln) {
+      minSoln = sz;
     }
-    degrees.swap(backup_degrees.at(d - 1));
-    G.swap(backups.at(d - 1));
+    degrees.swap(backupDegrees.at(d - 1));
+    G.swap(backupGs.at(d - 1));
     M = oldM;
     return sz;
   }
@@ -135,14 +133,11 @@ public:
 
 private:
   istream_iterator<int32_t> in;
-  int32_t N, M, min_soln;
+  int32_t N, M, minSoln;
   vector<bool> G;
   vector<int32_t> degrees;
-  vector<vector<bool>> backups;
-  vector<vector<int32_t>> backup_degrees;
+  vector<vector<bool>> backupGs;
+  vector<vector<int32_t>> backupDegrees;
 };
 
-int main() {
-  MinCover mc(cin);
-  cout << mc.findMin() << endl;
-}
+int main() { cout << MinCover(cin).findMinCover() << endl; }
