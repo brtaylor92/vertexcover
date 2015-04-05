@@ -1,12 +1,9 @@
 #include <algorithm>
-using std::count;
-using std::max;
 using std::min;
 
 #include <iostream>
 using std::cin;
 using std::cout;
-using std::endl;
 using std::istream;
 
 #include <iterator>
@@ -103,7 +100,7 @@ public:
   bool removeClique(int32_t &sz) {
     int32_t removed = 0;
     for (int32_t i = 0; i < N; ++i) {
-      if (degrees.at(i) != 0 && formsClique(i)) {
+      if (degrees.at(i) && formsClique(i)) {
         for (int32_t j = 0; j < N; ++j) {
           if (G.at(j + i * N)) {
             ++removed;
@@ -153,4 +150,4 @@ private:
   vector<vector<int32_t>> backupDegrees;
 };
 
-int main() { cout << MinCover(cin).addToCover(0, 0) << endl; }
+int main() { cout << MinCover(cin).addToCover(0, 0) << "\n"; }
