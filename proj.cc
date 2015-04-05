@@ -83,8 +83,6 @@ public:
     G.swap(backupGs.at(d - 1));
     // Look at the neighbors of the "best" cover additions for the other branch
     // If the "best" choices are not part of the min cover, their neighbors are
-    vector<int32_t> neighbors;
-    neighbors.reserve(bestDeg);
     for (auto i : best) {
       for (int32_t j = 0; j < N; ++j) {
         if (G.at(j + i * N)) {
