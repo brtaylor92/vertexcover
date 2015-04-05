@@ -24,34 +24,18 @@ public:
       int32_t v1 = *++in, v2 = *++in;
       G.at(v1 + v2 * N) = true;
       G.at(v2 + v1 * N) = true;
-    }
-    for (int32_t i = 0; i < N; ++i) {
-      degrees.at(i) = count(begin(G) + i * N, begin(G) + (i + 1) * N, true);
+      ++degrees.at(v1);
+      ++degrees.at(v2);
     }
   }
   ~MinCover() = default;
-  int32_t findMinCover() {
-    vector<int32_t> v;
-    return removeVertices(v, 0, 0);
-  }
-  int32_t removeVertices(vector<int32_t> &vertices, int32_t d, int32_t sz) {
-    backupDegrees.at(d) = degrees;
-    backupGs.at(d++) = G;
-    int32_t oldM = M;
-    // Remove selected vertices
-    sz += vertices.size();
-    for (auto i : vertices) {
-      removeVertex(i);
-    }
-    // Remove cliques/degree one vertices
+  int32_t addToCover(int32_t d, int32_t sz) {
+    // Remove cliques/degree one vertices; this is always useful
     while (removeClique(sz))
       ;
     // Check for completion
     if (!M) {
       minSoln = min(sz, minSoln);
-      degrees.swap(backupDegrees.at(d - 1));
-      G.swap(backupGs.at(d - 1));
-      M = oldM;
       return sz;
     }
     // Find the highest degree vertex
@@ -63,17 +47,17 @@ public:
     }
     // If M/d(v) is larger than the best cover, bound
     if (M / degrees.at(v) + sz >= minSoln) {
-      degrees.swap(backupDegrees.at(d - 1));
-      G.swap(backupGs.at(d - 1));
-      M = oldM;
       return N;
     }
-    // Consider the highest degree vertex as the best next choice
+    // Save the graph and related information before removing other vertices
+    int32_t oldM = M;
+    backupDegrees.at(d) = degrees;
+    backupGs.at(d++) = G;
+    // Consider the highest degree vertex as the best next choice for the cover
     vector<int32_t> best(1, v);
     int32_t bestDeg = degrees.at(v);
-    // Check if we can get a better next vertex by selecting neighbors of
-    // degree two vertices - this helps with grids
-    for (int i = 0; i < N; ++i) {
+    // Check if there is better path by taking the neighbors of deg 2 vertices
+    /*for (int i = 0; i < N; ++i) {
       if (degrees.at(i) == 2) {
         vector<int32_t> current;
         current.reserve(2);
@@ -89,29 +73,37 @@ public:
           bestDeg = currentDeg;
         }
       }
+    }*/
+    sz += best.size();
+    for (auto i : best) {
+      removeVertex(i);
     }
-    // Look at the neighbors of the "best" vertices for the other branch
+    int32_t left = addToCover(d, sz);
+    sz -= best.size();
+    // Restore those vertices before taking the other branch
+    M = oldM;
+    degrees.swap(backupDegrees.at(d - 1));
+    G.swap(backupGs.at(d - 1));
+    // Look at the neighbors of the "best" cover additions for the other branch
+    // If the "best" choices are not part of the min cover, their neighbors are
     vector<int32_t> neighbors;
     neighbors.reserve(bestDeg);
     for (auto i : best) {
       for (int32_t j = 0; j < N; ++j) {
         if (G.at(j + i * N)) {
-          neighbors.push_back(j);
+          removeVertex(j);
+          ++sz;
         }
       }
     }
-    // Recurse
-    auto lb = removeVertices(best, d, sz);
-    auto rb = removeVertices(neighbors, d, sz);
-    degrees.swap(backupDegrees.at(d - 1));
-    G.swap(backupGs.at(d - 1));
-    M = oldM;
-    return min(lb, rb);
+    int32_t right = addToCover(d, sz);
+    // Return the size of the best cover found
+    return min(left, right);
   }
   bool removeClique(int32_t &sz) {
     int32_t removed = 0;
     for (int32_t i = 0; i < N; ++i) {
-      if (degrees.at(i) != 0 && isClique(i)) {
+      if (degrees.at(i) != 0 && formsClique(i)) {
         for (int32_t j = 0; j < N; ++j) {
           if (G.at(j + i * N)) {
             ++removed;
@@ -134,7 +126,7 @@ public:
       }
     }
   }
-  bool isClique(int32_t v) {
+  bool formsClique(int32_t v) {
     vector<int32_t> n;
     n.reserve(degrees.at(v));
     for (int32_t i = 0; i < N; ++i) {
@@ -161,4 +153,4 @@ private:
   vector<vector<int32_t>> backupDegrees;
 };
 
-int main() { cout << MinCover(cin).findMinCover() << endl; }
+int main() { cout << MinCover(cin).addToCover(0, 0) << endl; }
