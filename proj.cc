@@ -1,4 +1,5 @@
 #include <algorithm>
+using std::max_element;
 using std::min;
 
 #include <iostream>
@@ -7,6 +8,7 @@ using std::cout;
 using std::istream;
 
 #include <iterator>
+using std::distance;
 using std::istream_iterator;
 
 #include <vector>
@@ -37,12 +39,8 @@ public:
       return sz;
     }
     // Find the highest degree vertex
-    int32_t v = 0;
-    for (int32_t i = 1; i < N; ++i) {
-      if (degrees.at(i) > degrees.at(v)) {
-        v = i;
-      }
-    }
+    int32_t v =
+        distance(begin(degrees), max_element(begin(degrees), end(degrees)));
     // If M/d(v) is larger than the best cover, bound
     if (M / degrees.at(v) + sz >= minSoln) {
       return N;
