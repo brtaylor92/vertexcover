@@ -21,8 +21,7 @@ public:
         backupGs(N, vector<bool>(N)), backupDegrees(N, vector<int32_t>(N)) {
     for (int32_t i = 0; i < M; ++i) {
       int32_t v1 = *++in, v2 = *++in;
-      G.at(v1 + v2 * N) = true;
-      G.at(v2 + v1 * N) = true;
+      G.at(v1 + v2 * N) = G.at(v2 + v1 * N) = true;
       ++degrees.at(v1);
       ++degrees.at(v2);
     }
@@ -109,8 +108,7 @@ public:
   void removeVertex(int32_t v) {
     for (int i = 0; i < N; i++) {
       if (G.at(i + v * N)) {
-        G.at(i + v * N) = false;
-        G.at(v + i * N) = false;
+        G.at(i + v * N) = G.at(v + i * N) = false;
         --degrees.at(v);
         --degrees.at(i);
         --M;
