@@ -31,7 +31,6 @@ public:
     while (int32_t numRemoved = removeClique()) {
       sz += numRemoved;
     }
-
     // Check for completion
     if (!M) {
       minSoln = min(sz, minSoln);
