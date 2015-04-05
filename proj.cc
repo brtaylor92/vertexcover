@@ -28,8 +28,10 @@ public:
   ~MinCover() = default;
   int32_t addToCover(int32_t d, int32_t sz) {
     // Remove cliques/degree one vertices; this is always useful
-    while (removeClique(sz))
-      ;
+    while (int32_t numRemoved = removeClique()) {
+      sz += numRemoved;
+    }
+
     // Check for completion
     if (!M) {
       minSoln = min(sz, minSoln);
@@ -71,12 +73,10 @@ public:
         }
       }
     }
-    sz += best.size();
     for (auto i : best) {
       removeVertex(i);
     }
-    int32_t left = addToCover(d, sz);
-    sz -= best.size();
+    int32_t left = addToCover(d, sz + best.size());
     // Restore those vertices before taking the other branch
     M = oldM;
     degrees.swap(backupDegrees.at(d - 1));
@@ -95,7 +95,7 @@ public:
     // Return the size of the best cover found
     return min(left, right);
   }
-  bool removeClique(int32_t &sz) {
+  int32_t removeClique() {
     int32_t removed = 0;
     for (int32_t i = 0; i < N; ++i) {
       if (degrees.at(i) && formsClique(i)) {
@@ -107,7 +107,6 @@ public:
         }
       }
     }
-    sz += removed;
     return removed;
   }
   void removeVertex(int32_t v) {
