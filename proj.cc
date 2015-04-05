@@ -38,60 +38,83 @@ public:
     backupDegrees.at(d) = degrees;
     backupGs.at(d++) = G;
     int32_t oldM = M;
+    // Remove selected vertices
     sz += vertices.size();
     for (auto i : vertices) {
       removeVertex(i);
     }
+    // Remove cliques/degree one vertices
     while (removeClique(sz))
       ;
-    if (M) {
-      int32_t lb = N, rb = N, deg = -1, v = -1;
-      for (int32_t i = 0; i < N; ++i) {
-        int32_t newDeg = degrees.at(i);
-        if (newDeg > deg) {
-          v = i;
-          deg = newDeg;
-        }
-      }
-      vector<int32_t> lv;
-      lv.reserve(degrees.at(v));
-      for (int32_t i = 0; i < N; ++i) {
-        if (G.at(i + v * N)) {
-          lv.push_back(i);
-        }
-      }
-      vector<int32_t> rv(1, v);
-      int32_t ldeg = 0;
-      for (auto i : lv) {
-        ldeg += degrees.at(i);
-      }
-      if (static_cast<int32_t>(lv.size()) + sz < minSoln) {
-        lb = removeVertices(lv, d, sz);
-      }
-      if (M / degrees.at(v) + sz < minSoln) {
-        rb = removeVertices(rv, d, sz);
-      }
+    // Check for completion
+    if (!M) {
+      minSoln = min(sz, minSoln);
       degrees.swap(backupDegrees.at(d - 1));
       G.swap(backupGs.at(d - 1));
       M = oldM;
-      return min(lb, rb);
+      return sz;
     }
-    if (sz < minSoln) {
-      minSoln = sz;
+    // Find the highest degree vertex
+    int32_t v = 0;
+    for (int32_t i = 1; i < N; ++i) {
+      if (degrees.at(i) > degrees.at(v)) {
+        v = i;
+      }
     }
+    // If M/d(v) is larger than the best cover, bound
+    if (M / degrees.at(v) + sz >= minSoln) {
+      degrees.swap(backupDegrees.at(d - 1));
+      G.swap(backupGs.at(d - 1));
+      M = oldM;
+      return N;
+    }
+    // Consider the highest degree vertex as the best next choice
+    vector<int32_t> best(1, v);
+    int32_t bestDeg = degrees.at(v);
+    // Check if we can get a better next vertex by selecting neighbors of
+    // degree two vertices - this helps with grids
+    for (int i = 0; i < N; ++i) {
+      if (degrees.at(i) == 2) {
+        vector<int32_t> current;
+        current.reserve(2);
+        int32_t currentDeg = 0;
+        for (int j = 0; j < N; j++) {
+          if (G.at(j + i * N)) {
+            current.push_back(j);
+            currentDeg += degrees.at(j);
+          }
+        }
+        if (currentDeg > bestDeg) {
+          best = current;
+          bestDeg = currentDeg;
+        }
+      }
+    }
+    // Look at the neighbors of the "best" vertices for the other branch
+    vector<int32_t> neighbors;
+    neighbors.reserve(bestDeg);
+    for (auto i : best) {
+      for (int32_t j = 0; j < N; ++j) {
+        if (G.at(j + i * N)) {
+          neighbors.push_back(j);
+        }
+      }
+    }
+    // Recurse
+    auto lb = removeVertices(best, d, sz);
+    auto rb = removeVertices(neighbors, d, sz);
     degrees.swap(backupDegrees.at(d - 1));
     G.swap(backupGs.at(d - 1));
     M = oldM;
-    return sz;
+    return min(lb, rb);
   }
-
   bool removeClique(int32_t &sz) {
-    int removed = 0;
+    int32_t removed = 0;
     for (int32_t i = 0; i < N; ++i) {
       if (degrees.at(i) != 0 && isClique(i)) {
         for (int32_t j = 0; j < N; ++j) {
           if (G.at(j + i * N)) {
-            ++sz;
+            ++removed;
             removeVertex(j);
           }
         }
@@ -100,7 +123,6 @@ public:
     sz += removed;
     return removed;
   }
-
   void removeVertex(int32_t v) {
     for (int i = 0; i < N; i++) {
       if (G.at(i + v * N)) {
@@ -112,7 +134,6 @@ public:
       }
     }
   }
-
   bool isClique(int32_t v) {
     vector<int32_t> n;
     n.reserve(degrees.at(v));
