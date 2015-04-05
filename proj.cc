@@ -57,7 +57,7 @@ public:
     vector<int32_t> best(1, v);
     int32_t bestDeg = degrees.at(v);
     // Check if there is better path by taking the neighbors of deg 2 vertices
-    /*for (int i = 0; i < N; ++i) {
+    for (int i = 0; i < N; ++i) {
       if (degrees.at(i) == 2) {
         vector<int32_t> current;
         current.reserve(2);
@@ -73,7 +73,7 @@ public:
           bestDeg = currentDeg;
         }
       }
-    }*/
+    }
     sz += best.size();
     for (auto i : best) {
       removeVertex(i);
