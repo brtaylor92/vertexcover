@@ -82,8 +82,7 @@ public:
     for (auto i : best) {
       for (int32_t j = 0; j < N; ++j) {
         if (G.at(j + i * N)) {
-          removeVertex(j);
-          ++sz;
+          sz += removeVertex(j);
         }
       }
     }
@@ -97,15 +96,14 @@ public:
       if (degrees.at(i) && formsClique(i)) {
         for (int32_t j = 0; j < N; ++j) {
           if (G.at(j + i * N)) {
-            ++removed;
-            removeVertex(j);
+            removed += removeVertex(j);
           }
         }
       }
     }
     return removed;
   }
-  void removeVertex(int32_t v) {
+  int32_t removeVertex(int32_t v) {
     for (int i = 0; i < N; i++) {
       if (G.at(i + v * N)) {
         G.at(i + v * N) = G.at(v + i * N) = false;
@@ -114,6 +112,7 @@ public:
         --M;
       }
     }
+    return 1;
   }
   bool formsClique(int32_t v) {
     vector<int32_t> n;
