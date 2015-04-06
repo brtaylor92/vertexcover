@@ -123,6 +123,9 @@ public:
       }
     }
     for (auto i : n) {
+      if (degrees.at(i) < degrees.at(v)) {
+        return false;
+      }
       for (auto j : n) {
         if (i != j && !G.at(j + i * N)) {
           return false;
