@@ -72,7 +72,7 @@ public:
     for (auto i : best) {
       removeVertex(i);
     }
-    int32_t left = addToCover(d, sz + best.size());
+    int32_t likely = addToCover(d, sz + best.size());
     // Restore those vertices before taking the other branch
     M = oldM;
     degrees.swap(backupDegrees.at(d - 1));
@@ -86,9 +86,28 @@ public:
         }
       }
     }
-    int32_t right = addToCover(d, sz);
     // Return the size of the best cover found
-    return min(left, right);
+    return min(likely, addToCover(d, sz));
+  }
+  bool formsClique(int32_t v) {
+    vector<int32_t> n;
+    n.reserve(degrees.at(v));
+    for (int32_t i = 0; i < N; ++i) {
+      if (G.at(i + v * N)) {
+        n.push_back(i);
+      }
+    }
+    for (auto i : n) {
+      if (degrees.at(i) < degrees.at(v)) {
+        return false;
+      }
+      for (auto j : n) {
+        if (i != j && !G.at(j + i * N)) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
   int32_t removeClique() {
     int32_t removed = 0;
@@ -113,26 +132,6 @@ public:
       }
     }
     return 1;
-  }
-  bool formsClique(int32_t v) {
-    vector<int32_t> n;
-    n.reserve(degrees.at(v));
-    for (int32_t i = 0; i < N; ++i) {
-      if (G.at(i + v * N)) {
-        n.push_back(i);
-      }
-    }
-    for (auto i : n) {
-      if (degrees.at(i) < degrees.at(v)) {
-        return false;
-      }
-      for (auto j : n) {
-        if (i != j && !G.at(j + i * N)) {
-          return false;
-        }
-      }
-    }
-    return true;
   }
 
 private:
