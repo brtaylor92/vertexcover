@@ -40,7 +40,7 @@ public:
     // Find the highest degree vertex
     int32_t v = distance(begin(deg), max_element(begin(deg), end(deg)));
     // If M/d(v) is larger than the best cover, bound
-    if (M / deg.at(v) + sz >= minSoln) {
+    if (M / deg.at(v) + sz + 1 >= minSoln) {
       return N;
     }
     // Save the graph and related information before removing optional vertices
