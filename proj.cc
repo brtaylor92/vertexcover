@@ -18,7 +18,7 @@ class MinCover {
 public:
   MinCover(istream &is)
       : in(is), N(*in), M(*++in), minSoln(N), G(N * N, false), degrees(N),
-        backupGs(N, vector<bool>(N)), backupDegrees(N, vector<int32_t>(N)) {
+        backupGs(N, G), backupDegrees(N, degrees) {
     for (int32_t i = 0; i < M; ++i) {
       int32_t v1 = *++in, v2 = *++in;
       G.at(v1 + v2 * N) = G.at(v2 + v1 * N) = true;
