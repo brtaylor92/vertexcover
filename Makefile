@@ -7,7 +7,7 @@ proj: proj.cc
 debug: proj.cc
 	$(CXX) $(CXXFLAGS) -O0 -g -DDEBUG $< -o $@
 
-test: MSS/test.sh MSS/correct.dat clean proj
+test: test.sh correct.dat clean proj
 	./$< ./proj 3.0s
 
 format: proj.cc
