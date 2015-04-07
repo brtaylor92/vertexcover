@@ -27,7 +27,7 @@ public:
     }
   }
   ~MinCover() = default;
-  int32_t addToCover(int32_t d = 0, int32_t sz = 0) {
+  int32_t findCover(int32_t d = 0, int32_t sz = 0) {
     // Remove cliques/degree one vertices; these must always be in the cover
     while (int32_t numRemoved = removeClique()) {
       sz += numRemoved;
@@ -71,7 +71,7 @@ public:
     for (auto i : best) {
       removeVertex(i);
     }
-    int32_t likely = addToCover(d, sz + best.size());
+    int32_t likely = findCover(d, sz + best.size());
     // Restore those vertices before taking the other branch
     M = oldM;
     deg.swap(backupDegs.at(d - 1));
@@ -86,7 +86,7 @@ public:
       }
     }
     // Return the size of the best cover found
-    return min(likely, addToCover(d, sz));
+    return min(likely, findCover(d, sz));
   }
   bool formsClique(int32_t v) {
     vector<int32_t> n;
@@ -142,4 +142,4 @@ private:
   vector<vector<int32_t>> backupDegs;
 };
 
-int main() { cout << MinCover(cin).addToCover() << "\n"; }
+int main() { cout << MinCover(cin).findCover() << "\n"; }
