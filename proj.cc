@@ -17,7 +17,7 @@ using std::vector;
 class MinCover {
 public:
   MinCover(istream &is)
-      : in(is), N(*in), M(*++in), minSoln(N), G(N * N, false), deg(N),
+      : in(is), N(*in), M(*++in), minSoln(N - 1), G(N * N, false), deg(N),
         backupGs(N), backupDegs(N) {
     for (int32_t i = 0; i < M; ++i) {
       int32_t v1 = *++in, v2 = *++in;
