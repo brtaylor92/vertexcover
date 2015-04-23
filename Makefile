@@ -13,7 +13,7 @@ soln: Empirical/utils/graphs/vcover.cc
 test: test.sh correct.dat clean vcover
 	./$< ./vcover 3
 
-format: proj.cc
+format: vcover.cc
 	clang-format -i $^
 
 clean:
