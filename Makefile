@@ -11,10 +11,10 @@ soln: Empirical/utils/graphs/vcover.cc
 	$(CXX) $(CXXFLAGS) -O3 $< -o $@
 
 test: test.sh correct.dat clean vcover
-	./$< ./proj 3.0s
+	./$< ./vcover 3.0s
 
 format: proj.cc
 	clang-format -i $^
 
 clean:
-	rm -rf proj debug *.dSYM timeset.dat
+	rm -rf vcover debug *.dSYM timeset.dat
