@@ -1,16 +1,16 @@
 CXX = clang++
 CXXFLAGS = -std=c++11 -Wall -Wextra -Wshadow -pedantic
 
-proj: proj.cc Empirical/tools/BitVector64.h
+vcover: vcover.cc Empirical/tools/BitVector.h
 	$(CXX) $(CXXFLAGS) -O3 $< -o $@
 
-debug: proj.cc
+debug: vcover.cc Empirical/tools/BitVector.h
 	$(CXX) $(CXXFLAGS) -O0 -g -DDEBUG $< -o $@
 
 soln: Empirical/utils/graphs/vcover.cc
 	$(CXX) $(CXXFLAGS) -O3 $< -o $@
 
-test: test.sh correct.dat clean proj
+test: test.sh correct.dat clean vcover
 	./$< ./proj 3.0s
 
 format: proj.cc
