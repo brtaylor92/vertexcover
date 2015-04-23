@@ -14,7 +14,7 @@ using std::istream_iterator;
 #include <vector>
 using std::vector;
 
-#include "Empirical/tools/BitVector64.h"
+#include "Empirical/tools/BitVector.h"
 using emp::BitVector;
 
 class MinCover {
