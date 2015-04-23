@@ -2,8 +2,5 @@ proj
 debug
 soln
 *.dSYM
-MSS
 generateChain.py
-correct.dat
 timeset.dat
-test.sh
