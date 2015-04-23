@@ -1,0 +1,4 @@
+[submodule "Empirical"]
+	path = Empirical
+	url = git@github.com:brtaylor92/Empirical.git
+	branch = master
