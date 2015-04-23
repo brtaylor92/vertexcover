@@ -11,7 +11,7 @@ soln: Empirical/utils/graphs/vcover.cc
 	$(CXX) $(CXXFLAGS) -O3 $< -o $@
 
 test: test.sh correct.dat clean vcover
-	./$< ./vcover 3.0s
+	./$< ./vcover 3
 
 format: proj.cc
 	clang-format -i $^
