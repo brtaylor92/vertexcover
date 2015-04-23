@@ -14,14 +14,18 @@ using std::istream_iterator;
 #include <vector>
 using std::vector;
 
+#include "Empirical/tools/BitVector64.h"
+using emp::BitVector;
+
 class MinCover {
 public:
   MinCover(istream &is)
-      : in(is), N(*in), M(*++in), minSoln(N - 1), G(N * N, false), deg(N),
+      : in(is), N(*in), M(*++in), minSoln(N - 1), G(N * N), deg(N),
         backupGs(N), backupDegs(N) {
     for (int32_t i = 0; i < M; ++i) {
       int32_t v1 = *++in, v2 = *++in;
-      G.at(v1 + v2 * N) = G.at(v2 + v1 * N) = true;
+      G.Set(v1 + v2 * N, true);
+      G.Set(v2 + v1 * N, true);
       ++deg.at(v1);
       ++deg.at(v2);
     }
@@ -57,7 +61,7 @@ public:
         current.reserve(2);
         int32_t currentDeg = 0;
         for (int j = 0; j < N; ++j) {
-          if (G.at(j + i * N)) {
+          if (G.Get(j + i * N)) {
             current.push_back(j);
             currentDeg += deg.at(j);
           }
@@ -75,12 +79,12 @@ public:
     // Restore those vertices before taking the other branch
     M = oldM;
     deg.swap(backupDegs.at(d - 1));
-    G.swap(backupGs.at(d - 1));
+    G = backupGs.at(d - 1);
     // Look at the neighbors of the "best" cover additions for the other branch
     // If the "best" choices are not part of the min cover, their neighbors are
     for (auto i : best) {
       for (int32_t j = 0; j < N; ++j) {
-        if (G.at(j + i * N)) {
+        if (G.Get(j + i * N)) {
           sz += removeVertex(j);
         }
       }
@@ -92,7 +96,7 @@ public:
     vector<int32_t> n;
     n.reserve(deg.at(v));
     for (int32_t i = 0; i < N; ++i) {
-      if (G.at(i + v * N)) {
+      if (G.Get(i + v * N)) {
         n.push_back(i);
       }
     }
@@ -101,7 +105,7 @@ public:
         return false;
       }
       for (auto j : n) {
-        if (i != j && !G.at(j + i * N)) {
+        if (i != j && !G.Get(j + i * N)) {
           return false;
         }
       }
@@ -113,7 +117,7 @@ public:
     for (int32_t i = 0; i < N; ++i) {
       if (deg.at(i) && formsClique(i)) {
         for (int32_t j = 0; j < N; ++j) {
-          if (G.at(j + i * N)) {
+          if (G.Get(j + i * N)) {
             removed += removeVertex(j);
           }
         }
@@ -123,8 +127,9 @@ public:
   }
   int32_t removeVertex(int32_t v) {
     for (int i = 0; i < N; ++i) {
-      if (G.at(i + v * N)) {
-        G.at(i + v * N) = G.at(v + i * N) = false;
+      if (G.Get(i + v * N)) {
+        G.Set(i + v * N, false);
+        G.Set(v + i * N, false);
         --deg.at(v);
         --deg.at(i);
         --M;
@@ -136,9 +141,9 @@ public:
 private:
   istream_iterator<int32_t> in;
   int32_t N, M, minSoln;
-  vector<bool> G;
+  BitVector G;
   vector<int32_t> deg;
-  vector<vector<bool>> backupGs;
+  vector<BitVector> backupGs;
   vector<vector<int32_t>> backupDegs;
 };
 
