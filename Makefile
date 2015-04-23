@@ -1,16 +1,19 @@
 CXX = clang++
-CXXFLAGS = -std=c++11 -Wall -Wextra -Wshadow -pedantic
+CXXFLAGS = -std=c++14 -Wall -Wextra -Wshadow -pedantic
 
-proj: proj.cc
-	$(CXX) $(CXXFLAGS) -O3 $< -o $@
+vcover: vcover.cc
+	$(CXX) $(CXXFLAGS) -O3 -fno-exceptions -fno-rtti -fomit-frame-pointer $< -o $@
 
-debug: proj.cc
+debug: vcover.cc
 	$(CXX) $(CXXFLAGS) -O0 -g -DDEBUG $< -o $@
 
-test: test.sh correct.dat clean proj
-	./$< ./proj 3.0s
+soln: Empirical/utils/graphs/vcover.cc
+	$(CXX) $(CXXFLAGS) -O3 $< -o $@
 
-format: proj.cc
+test: test.sh correct.dat clean vcover
+	./$< ./vcover 3
+
+format: vcover.cc
 	clang-format -i $^
 
 clean:
