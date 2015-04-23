@@ -12,3 +12,5 @@ chain*
 MSS
 generateChain.py
 correct.dat
+timeset.dat
+>>>>>>> bab716f... Add test script, test cases, and solutions to git
