@@ -23,30 +23,11 @@ using emp::SolveState;
 
 class MinCover {
 public:
-  MinCover(istream &is) : in(is), N(*in), M(*++in), G(N), soln(N) {
+  MinCover(istream &is) : in(is), N(*in), M(*++in), minSoln(N - 1), G(N), soln(N) {
     for (int32_t i = 0; i < M; ++i) {
       int32_t v1 = *++in, v2 = *++in;
       G.AddEdgePair(v1, v2);
     }
-    int32_t maxDegree = -1;
-    int32_t maxId = -1;
-    BitVector nodes(N, true);
-    while (maxDegree != 0) {
-      maxDegree = 0;
-      for (int32_t i = 0; i < N; ++i) {
-        if (!nodes[i]) {
-          continue;
-        } else {
-          const int32_t d = G.GetMaskedDegree(i, nodes);
-          if (d > maxDegree) {
-            maxDegree = d;
-            maxId = i;
-          }
-        }
-      }
-      nodes[maxId] = false;
-    }
-    minSoln = (~nodes).CountOnes();
   }
   ~MinCover() = default;
   int32_t getMinSoln() {
