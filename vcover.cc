@@ -25,8 +25,7 @@ using emp::SolveState;
 
 class MinCover {
 public:
-  MinCover(istream &is)
-      : in(is), N(*in), M(*++in), G(N), soln(N) {
+  MinCover(istream &is) : in(is), N(*in), M(*++in), G(N), soln(N) {
     for (int32_t i = 0; i < M; ++i) {
       int32_t v1 = *++in, v2 = *++in;
       G.AddEdgePair(v1, v2);
@@ -36,11 +35,11 @@ public:
     BitVector nodes(N, true);
     while (maxDegree != 0) {
       maxDegree = 0;
-      for (int i = 0; i < N; ++i) {
+      for (int32_t i = 0; i < N; ++i) {
         if (!nodes[i]) {
           continue;
         } else {
-          int32_t d = G.GetMaskedDegree(i, nodes);
+          const int32_t d = G.GetMaskedDegree(i, nodes);
           if (d > maxDegree) {
             maxDegree = d;
             maxId = i;
@@ -68,7 +67,7 @@ public:
     int32_t bestDeg = 0;
     int32_t totalDeg = 0;
     for (int32_t i = soln.GetNextUnk(-1); i != -1; i = soln.GetNextUnk(i)) {
-      int32_t d = G.GetMaskedDegree(i, soln.GetUnkVector());
+      const int32_t d = G.GetMaskedDegree(i, soln.GetUnkVector());
       totalDeg += d;
       if (d > bestDeg) {
         best = {i};
@@ -77,7 +76,7 @@ public:
         vector<int32_t> current;
         current.reserve(2);
         int32_t currentDeg = 0;
-        for (int j = soln.GetNextUnk(-1); j != -1; j = soln.GetNextUnk(j)) {
+        for (int32_t j = soln.GetNextUnk(-1); j != -1; j = soln.GetNextUnk(j)) {
           if (G.HasEdgePair(i, j)) {
             current.push_back(j);
             currentDeg += G.GetMaskedDegree(j, soln.GetUnkVector());
@@ -113,7 +112,7 @@ public:
   }
   bool formsClique(int32_t v) {
     vector<int32_t> n;
-    int32_t d = G.GetMaskedDegree(v, soln.GetUnkVector());
+    const int32_t d = G.GetMaskedDegree(v, soln.GetUnkVector());
     n.reserve(d);
     // Find the neighbors of v which have not yet been evaluated
     for (int32_t i = soln.GetNextUnk(-1); i != -1; i = soln.GetNextUnk(i)) {
@@ -151,7 +150,8 @@ public:
 
 private:
   istream_iterator<int32_t> in;
-  int32_t N, M, minSoln;
+  const int32_t N, M;
+  int32_t minSoln;
   Graph G;
   SolveState soln;
 };
