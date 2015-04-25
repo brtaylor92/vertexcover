@@ -1,5 +1,4 @@
 #include <algorithm>
-using std::max_element;
 using std::min;
 
 #include <iostream>
@@ -8,7 +7,6 @@ using std::cout;
 using std::istream;
 
 #include <iterator>
-using std::distance;
 using std::istream_iterator;
 
 #include <vector>
