@@ -1,10 +1,10 @@
 CXX = clang++
 CXXFLAGS = -std=c++11 -Wall -Wextra -Wshadow -pedantic -march=corei7 -fomit-frame-pointer
 
-vcover: vcover.cc Empirical/tools/Graph.h Empirical/tools/SolveState.h
+vcover: vcover.cc Empirical/tools/BitVector.h Empirical/tools/Graph.h Empirical/tools/SolveState.h
 	$(CXX) $(CXXFLAGS) -O3 $< -o $@
 
-debug: vcover.cc Empirical/tools/Graph.h Empirical/tools/SolveState.h
+debug: vcover.cc Empirical/tools/BitVector.h Empirical/tools/Graph.h Empirical/tools/SolveState.h
 		$(CXX) $(CXXFLAGS) -O0 -g -DDEBUG $< -o $@
 
 soln: Empirical/utils/graphs/vcover.cc
