@@ -95,7 +95,7 @@ public:
     // Save the graph and related information before removing optional vertices
     SolveState oldSoln = soln;
     // Consider the highest degree vertex as the best next choice of cover
-    for (auto i : best) {
+    for (const auto i : best) {
       soln.Include(i);
     }
     findCover();
@@ -103,7 +103,7 @@ public:
     soln = oldSoln;
     // Look at the neighbors of the "best" cover additions for the other branch
     // If the "best" choices are not part of the min cover, their neighbors are
-    for (auto i : best) {
+    for (const auto i : best) {
       soln.ForceExclude(i);
       soln.IncludeSet(G.GetEdgeSet(i) & soln.GetUnkVector());
     }
@@ -120,13 +120,13 @@ public:
         n.push_back(i);
       }
     }
-    for (auto i : n) {
+    for (const auto i : n) {
       // If neighbor is not of sufficient degree to form a clique, exit
       if (G.GetMaskedDegree(i, soln.GetUnkVector()) < d) {
         return false;
       }
       // Check that the edges are to the correct other nodes
-      for (auto j : n) {
+      for (const auto j : n) {
         if (i != j && !G.HasEdgePair(i, j)) {
           return false;
         }
