@@ -50,7 +50,6 @@ public:
       nodes[maxId] = false;
     }
     minSoln = (~nodes).CountOnes();
-    cout << "min soln: " << minSoln << "\n";
   }
   ~MinCover() = default;
   int32_t getMinSoln() {
