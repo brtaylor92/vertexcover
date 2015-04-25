@@ -38,17 +38,13 @@ public:
     return minSoln;
   }
   void findCover() {
-    // Remove cliques/degree one vertices; these must always be in the cover
-    /*while (removeClique()) {
-      ;
-    }*/
     removeCliques();
     // Check for completion
     if (soln.IsFinal()) {
       minSoln = min(minSoln, soln.CountIn());
       return;
     }
-    // Find the highest degree vertex
+    // Find the highest degree vertex or pair of deg-2 neighbors
     vector<int32_t> best(1, -1);
     int32_t bestDeg = 0;
     int32_t totalDeg = 0;
@@ -100,15 +96,18 @@ public:
     vector<int32_t> n;
     int32_t d = G.GetMaskedDegree(v, soln.GetUnkVector());
     n.reserve(d);
+    // Find the neighbors of v which have not yet been evaluated
     for (int32_t i = soln.GetNextUnk(-1); i != -1; i = soln.GetNextUnk(i)) {
       if (G.HasEdgePair(v, i)) {
         n.push_back(i);
       }
     }
     for (auto i : n) {
+      // If neighbor is not of sufficient degree to form a clique, exit
       if (G.GetMaskedDegree(i, soln.GetUnkVector()) < d) {
         return false;
       }
+      // Check that the edges are to the correct other nodes
       for (auto j : n) {
         if (i != j && !G.HasEdgePair(i, j)) {
           return false;
@@ -119,9 +118,11 @@ public:
   }
   void removeCliques() {
     for (int32_t i = soln.GetNextUnk(-1); i != -1; i = soln.GetNextUnk(i)) {
+      // If degree 0, exclude
       if (!G.GetMaskedDegree(i, soln.GetUnkVector())) {
         soln.Exclude(i);
       } else if (formsClique(i)) {
+        // If we have a clique, include the neighbors and exclude this node
         soln.IncludeSet(G.GetEdgeSet(i));
         soln.Exclude(i);
         i = -1;
