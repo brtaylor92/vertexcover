@@ -17,53 +17,55 @@ using std::vector;
 #include "Empirical/tools/BitVector.h"
 using emp::BitVector;
 
+#include "Empirical/tools/Graph.h"
+using emp::Graph;
+
+#include "Empirical/tools/SolveState.h"
+using emp::SolveState;
+
 class MinCover {
 public:
   MinCover(istream &is)
-      : in(is), N(*in), M(*++in), minSoln(N - 1), G(N * N), deg(N),
-        backupGs(N), backupDegs(N) {
+      : in(is), N(*in), M(*++in), minSoln(N - 1), G(N), soln(N) {
     for (int32_t i = 0; i < M; ++i) {
       int32_t v1 = *++in, v2 = *++in;
-      G.Set(v1 + v2 * N, true);
-      G.Set(v2 + v1 * N, true);
-      ++deg.at(v1);
-      ++deg.at(v2);
+      G.AddEdgePair(v1, v2);
     }
   }
   ~MinCover() = default;
-  int32_t findCover(int32_t d = 0, int32_t sz = 0) {
+  int32_t getMinSoln() {
+    findCover();
+    return minSoln;
+  }
+  void findCover() {
     // Remove cliques/degree one vertices; these must always be in the cover
-    while (int32_t numRemoved = removeClique()) {
-      sz += numRemoved;
-    }
+    /*while (removeClique()) {
+      ;
+    }*/
+    removeCliques();
     // Check for completion
-    if (!M) {
-      minSoln = min(sz, minSoln);
-      return sz;
+    if (soln.IsFinal()) {
+      minSoln = min(minSoln, soln.CountIn());
+      return;
     }
     // Find the highest degree vertex
-    int32_t v = distance(begin(deg), max_element(begin(deg), end(deg)));
-    // If M/d(v) is larger than the best cover, bound
-    if (M / deg.at(v) + sz + 1 >= minSoln) {
-      return N;
-    }
-    // Save the graph and related information before removing optional vertices
-    int32_t oldM = M;
-    backupDegs.at(d) = deg;
-    backupGs.at(d++) = G;
-    // Consider the highest degree vertex as the best next choice of cover
-    vector<int32_t> best(1, v);
-    int32_t bestDeg = deg.at(v);
-    // Check if there is better branch taking the neighbors of deg 2 vertices
-    for (int i = 0; i < N; ++i) {
-      if (deg.at(i) == 2) {
+    vector<int32_t> best(1, -1);
+    int32_t bestDeg = 0;
+    int32_t totalDeg = 0;
+    for (int32_t i = soln.GetNextUnk(-1); i != -1; i = soln.GetNextUnk(i)) {
+      int32_t d = G.GetMaskedDegree(i, soln.GetUnkVector());
+      totalDeg += d;
+      if (d > bestDeg) {
+        best = {i};
+        bestDeg = d;
+      } else if (d == 2) {
         vector<int32_t> current;
         current.reserve(2);
         int32_t currentDeg = 0;
-        for (int j = 0; j < N; ++j) {
-          if (G.Get(j + i * N)) {
+        for (int j = soln.GetNextUnk(-1); j != -1; j = soln.GetNextUnk(j)) {
+          if (G.HasEdgePair(i, j)) {
             current.push_back(j);
-            currentDeg += deg.at(j);
+            currentDeg += G.GetMaskedDegree(j, soln.GetUnkVector());
           }
         }
         if (currentDeg > bestDeg) {
@@ -72,79 +74,66 @@ public:
         }
       }
     }
-    for (auto i : best) {
-      removeVertex(i);
+    // If M/d(v) is larger than the best cover, bound
+    if (soln.CountIn() + (totalDeg - 2) / (bestDeg * 2) + 1 >= minSoln) {
+      return;
     }
-    int32_t likely = findCover(d, sz + best.size());
+    // Save the graph and related information before removing optional vertices
+    SolveState oldSoln = soln;
+    // Consider the highest degree vertex as the best next choice of cover
+    for (auto i : best) {
+      soln.Include(i);
+    }
+    findCover();
     // Restore those vertices before taking the other branch
-    M = oldM;
-    deg.swap(backupDegs.at(d - 1));
-    G = backupGs.at(d - 1);
+    soln = oldSoln;
     // Look at the neighbors of the "best" cover additions for the other branch
     // If the "best" choices are not part of the min cover, their neighbors are
     for (auto i : best) {
-      for (int32_t j = 0; j < N; ++j) {
-        if (G.Get(j + i * N)) {
-          sz += removeVertex(j);
-        }
-      }
+      soln.ForceExclude(i);
+      soln.IncludeSet(G.GetEdgeSet(i) & soln.GetUnkVector());
     }
     // Return the size of the best cover found
-    return min(likely, findCover(d, sz));
+    findCover();
   }
   bool formsClique(int32_t v) {
     vector<int32_t> n;
-    n.reserve(deg.at(v));
-    for (int32_t i = 0; i < N; ++i) {
-      if (G.Get(i + v * N)) {
+    int32_t d = G.GetMaskedDegree(v, soln.GetUnkVector());
+    n.reserve(d);
+    for (int32_t i = soln.GetNextUnk(-1); i != -1; i = soln.GetNextUnk(i)) {
+      if (G.HasEdgePair(v, i)) {
         n.push_back(i);
       }
     }
     for (auto i : n) {
-      if (deg.at(i) < deg.at(v)) {
+      if (G.GetMaskedDegree(i, soln.GetUnkVector()) < d) {
         return false;
       }
       for (auto j : n) {
-        if (i != j && !G.Get(j + i * N)) {
+        if (i != j && !G.HasEdgePair(i, j)) {
           return false;
         }
       }
     }
     return true;
   }
-  int32_t removeClique() {
-    int32_t removed = 0;
-    for (int32_t i = 0; i < N; ++i) {
-      if (deg.at(i) && formsClique(i)) {
-        for (int32_t j = 0; j < N; ++j) {
-          if (G.Get(j + i * N)) {
-            removed += removeVertex(j);
-          }
-        }
+  void removeCliques() {
+    for (int32_t i = soln.GetNextUnk(-1); i != -1; i = soln.GetNextUnk(i)) {
+      if (!G.GetMaskedDegree(i, soln.GetUnkVector())) {
+        soln.Exclude(i);
+      } else if (formsClique(i)) {
+        soln.IncludeSet(G.GetEdgeSet(i));
+        soln.Exclude(i);
+        i = -1;
       }
     }
-    return removed;
-  }
-  int32_t removeVertex(int32_t v) {
-    for (int i = 0; i < N; ++i) {
-      if (G.Get(i + v * N)) {
-        G.Set(i + v * N, false);
-        G.Set(v + i * N, false);
-        --deg.at(v);
-        --deg.at(i);
-        --M;
-      }
-    }
-    return 1;
   }
 
 private:
   istream_iterator<int32_t> in;
   int32_t N, M, minSoln;
-  BitVector G;
-  vector<int32_t> deg;
-  vector<BitVector> backupGs;
-  vector<vector<int32_t>> backupDegs;
+  Graph G;
+  SolveState soln;
 };
 
-int main() { cout << MinCover(cin).findCover() << "\n"; }
+int main() { cout << MinCover(cin).getMinSoln() << "\n"; }
