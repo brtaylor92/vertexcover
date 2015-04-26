@@ -45,40 +45,45 @@ public:
     vector<int32_t> best(1, -1);
     int32_t bestDeg = 0;
     int32_t totalDeg = 0;
+    vector<int32_t> current;
+    current.reserve(2);
+    int32_t currentDeg = 0;
     for (int32_t i = soln.GetNextUnk(-1); i != -1; i = soln.GetNextUnk(i)) {
       const int32_t d = G.GetMaskedDegree(i, soln.GetUnkVector());
       totalDeg += d;
       if (d > bestDeg) {
         best = {i};
         bestDeg = d;
-      } else if (d == 2) {
-        vector<int32_t> current;
-        current.reserve(2);
-        int32_t currentDeg = 0;
-        for (int32_t j = soln.GetNextUnk(-1); j != -1; j = soln.GetNextUnk(j)) {
-          if (G.HasEdgePair(i, j)) {
+      } 
+    }
+    // If M/d(v) is larger than the best cover, bound
+    if (soln.CountIn() + (totalDeg - 2) / (bestDeg * 2) + 1 >= minSoln) {
+      return;
+    }
+    for (int32_t i = soln.GetNextUnk(-1); i != -1; i = soln.GetNextUnk(i)) {
+      const int32_t d = G.GetMaskedDegree(i, soln.GetUnkVector());
+      if (d == 2) {
+          current.clear();
+          currentDeg = 0;
+          const BitVector & e = G.GetEdgeSet(i) & soln.GetUnkVector();
+          for (int32_t j = e.FindBit(); j != -1; j = e.FindBit(++j)) {
             current.push_back(j);
             currentDeg += G.GetMaskedDegree(j, soln.GetUnkVector());
           }
-        }
         if (currentDeg > bestDeg) {
           best = current;
           bestDeg = currentDeg;
         }
       }
     }
-    // If M/d(v) is larger than the best cover, bound
-    if (soln.CountIn() + (totalDeg - 2) / (bestDeg * 2) + 1 >= minSoln) {
-      return;
-    }
-    // Save the graph and related information before removing optional vertices
+    // Save the solution state before removing optional vertices
     SolveState oldSoln = soln;
-    // Consider the highest degree vertex as the best next choice of cover
+    // Consider the next choice of cover
     for (const auto i : best) {
       soln.Include(i);
     }
     findCover();
-    // Restore those vertices before taking the other branch
+    // Restore vertices before taking the other branch
     soln = oldSoln;
     // Look at the neighbors of the "best" cover additions for the other branch
     // If the "best" choices are not part of the min cover, their neighbors are
@@ -86,7 +91,6 @@ public:
       soln.ForceExclude(i);
       soln.IncludeSet(G.GetEdgeSet(i));
     }
-    // Return the size of the best cover found
     findCover();
   }
   bool formsClique(int32_t v) {
