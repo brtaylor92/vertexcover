@@ -23,7 +23,8 @@ using emp::SolveState;
 
 class MinCover {
 public:
-  MinCover(istream &is) : in(is), N(*in), M(*++in), minSoln(N - 1), G(N), soln(N) {
+  MinCover(istream &is)
+      : in(is), N(*in), M(*++in), minSoln(N - 1), G(N), soln(N) {
     for (int32_t i = 0; i < M; ++i) {
       int32_t v1 = *++in, v2 = *++in;
       G.AddEdgePair(v1, v2);
@@ -51,7 +52,7 @@ public:
       if (d > bestDeg) {
         best = {i};
         bestDeg = d;
-      } 
+      }
     }
     // If M/d(v) is larger than the best cover, bound
     if (soln.CountIn() + (totalDeg - 2) / (bestDeg * 2) + 1 >= minSoln) {
@@ -63,13 +64,13 @@ public:
     for (int32_t i = soln.GetNextUnk(-1); i != -1; i = soln.GetNextUnk(i)) {
       const int32_t d = G.GetMaskedDegree(i, soln.GetUnkVector());
       if (d == 2) {
-          current.clear();
-          currentDeg = 0;
-          const BitVector & e = G.GetEdgeSet(i) & soln.GetUnkVector();
-          for (int32_t j = e.FindBit(); j != -1; j = e.FindBit(++j)) {
-            current.push_back(j);
-            currentDeg += G.GetMaskedDegree(j, soln.GetUnkVector());
-          }
+        current.clear();
+        currentDeg = 0;
+        const BitVector &e = G.GetEdgeSet(i) & soln.GetUnkVector();
+        for (int32_t j = e.FindBit(); j != -1; j = e.FindBit(++j)) {
+          current.push_back(j);
+          currentDeg += G.GetMaskedDegree(j, soln.GetUnkVector());
+        }
         if (currentDeg > bestDeg) {
           best = current;
           bestDeg = currentDeg;
@@ -106,7 +107,7 @@ public:
       }
       n[i] = true;
     }
-    // All the edge sets of the 
+    // V and its neighbors form a clique
     return true;
   }
   void removeCliques() {
