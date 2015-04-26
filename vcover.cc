@@ -31,7 +31,8 @@ using emp::SolveState;
 
 class MinCover {
 public:
-  MinCover(istream &_is) : is(_is), N(*is), M(*++is), G(N), soln(N), minSoln(N) {
+  MinCover(istream &_is)
+      : is(_is), N(*is), M(*++is), G(N), soln(N), minSoln(N) {
     for (int32_t i = 0; i < M; ++i) {
       int32_t v1 = *++is, v2 = *++is;
       G.AddEdgePair(v1, v2);
@@ -76,7 +77,7 @@ public:
     }
     int32_t max = accumulate(begin(heap), end(heap), 0);
     // If M/d(v) is larger than the best cover, bound
-    if (/*soln.CountIn() + (totalDeg - 2) / (bestDeg * 2) + 1 >= minSoln*/max < totalDeg/2) {
+    if (max < totalDeg / 2) {
       return;
     }
     // Try to beat the highest degree with a pair of neighbors of deg-2 vertex
