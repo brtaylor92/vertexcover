@@ -1,5 +1,10 @@
 #include <algorithm>
 using std::min;
+using std::pop_heap;
+using std::push_heap;
+
+#include <functional>
+using std::greater;
 
 #include <iostream>
 using std::cin;
@@ -8,6 +13,9 @@ using std::istream;
 
 #include <iterator>
 using std::istream_iterator;
+
+#include <numeric>
+using std::accumulate;
 
 #include <vector>
 using std::vector;
@@ -23,9 +31,9 @@ using emp::SolveState;
 
 class MinCover {
 public:
-  MinCover(istream &is) : in(is), N(*in), M(*++in), G(N), soln(N), minSoln(N) {
+  MinCover(istream &_is) : is(_is), N(*is), M(*++is), G(N), soln(N), minSoln(N) {
     for (int32_t i = 0; i < M; ++i) {
-      int32_t v1 = *++in, v2 = *++in;
+      int32_t v1 = *++is, v2 = *++is;
       G.AddEdgePair(v1, v2);
     }
   }
@@ -36,10 +44,17 @@ public:
   }
   void findMinCover() {
     removeCliques();
+    const int32_t in = soln.CountIn();
     if (soln.IsFinal()) {
-      minSoln = min(minSoln, soln.CountIn());
+      minSoln = min(minSoln, in);
+      return;
+    } else if (in + 1 > minSoln) {
       return;
     }
+    // BETTER BOUNDING BETWEEN HERE AND NEXT COMMENT
+    size_t allowed = minSoln - in - 1;
+    vector<int32_t> heap;
+    heap.reserve(minSoln - in - 1);
     // Find the highest degree vertex
     int32_t v = -1, bestDeg = 0, totalDeg = 0;
     for (int32_t i = soln.GetNextUnk(-1); i != -1; i = soln.GetNextUnk(i)) {
@@ -49,9 +64,19 @@ public:
         v = i;
         bestDeg = d;
       }
+      if (heap.size() < allowed || (heap.size() && d > heap.at(0))) {
+        if (heap.size() < allowed) {
+          heap.push_back(d);
+        } else {
+          pop_heap(begin(heap), end(heap), greater<int32_t>());
+          heap.back() = d;
+        }
+        push_heap(begin(heap), end(heap), greater<int32_t>());
+      }
     }
+    int32_t max = accumulate(begin(heap), end(heap), 0);
     // If M/d(v) is larger than the best cover, bound
-    if (soln.CountIn() + (totalDeg - 2) / (bestDeg * 2) + 1 >= minSoln) {
+    if (/*soln.CountIn() + (totalDeg - 2) / (bestDeg * 2) + 1 >= minSoln*/max < totalDeg/2) {
       return;
     }
     // Try to beat the highest degree with a pair of neighbors of deg-2 vertex
@@ -117,7 +142,7 @@ public:
   }
 
 private:
-  istream_iterator<int32_t> in;
+  istream_iterator<int32_t> is;
   const int32_t N, M;
   Graph G;
   SolveState soln;
