@@ -36,12 +36,11 @@ public:
   }
   void findMinCover() {
     removeCliques();
-    // Check for completion
     if (soln.IsFinal()) {
       minSoln = min(minSoln, soln.CountIn());
       return;
     }
-    // Find the highest degree vertex or pair of deg-2 neighbors
+    // Find the highest degree vertex
     int32_t v = -1, bestDeg = 0, totalDeg = 0;
     for (int32_t i = soln.GetNextUnk(-1); i != -1; i = soln.GetNextUnk(i)) {
       const int32_t d = G.GetMaskedDegree(i, soln.GetUnkVector());
@@ -55,6 +54,7 @@ public:
     if (soln.CountIn() + (totalDeg - 2) / (bestDeg * 2) + 1 >= minSoln) {
       return;
     }
+    // Try to beat the highest degree with a pair of neighbors of deg-2 vertex
     vector<int32_t> best(1, v), current;
     int32_t currentDeg = 0;
     for (int32_t i = soln.GetNextUnk(-1); i != -1; i = soln.GetNextUnk(i)) {
@@ -73,16 +73,14 @@ public:
         }
       }
     }
-    // Save the solution state before removing optional vertices
+    // Save the solution state before recursing and consider the next cover
     SolveState oldSoln = soln;
-    // Consider the next choice of cover
     for (const auto i : best) {
       soln.Include(i);
     }
     findMinCover();
-    // Restore vertices before taking the other branch
+    // Restore solution before taking the other branch
     soln = oldSoln;
-    // Look at the neighbors of the "best" cover additions for the other branch
     // If the "best" choices are not part of the min cover, their neighbors are
     for (const auto i : best) {
       soln.ForceExclude(i);
