@@ -23,8 +23,7 @@ using emp::SolveState;
 
 class MinCover {
 public:
-  MinCover(istream &is)
-      : in(is), N(*in), M(*++in), G(N), soln(N), minSoln(N) {
+  MinCover(istream &is) : in(is), N(*in), M(*++in), G(N), soln(N), minSoln(N) {
     for (int32_t i = 0; i < M; ++i) {
       int32_t v1 = *++in, v2 = *++in;
       G.AddEdgePair(v1, v2);
@@ -43,14 +42,12 @@ public:
       return;
     }
     // Find the highest degree vertex or pair of deg-2 neighbors
-    vector<int32_t> best(1, -1);
-    int32_t bestDeg = 0;
-    int32_t totalDeg = 0;
+    int32_t v = -1, bestDeg = 0, totalDeg = 0;
     for (int32_t i = soln.GetNextUnk(-1); i != -1; i = soln.GetNextUnk(i)) {
       const int32_t d = G.GetMaskedDegree(i, soln.GetUnkVector());
       totalDeg += d;
       if (d > bestDeg) {
-        best = {i};
+        v = i;
         bestDeg = d;
       }
     }
@@ -58,7 +55,7 @@ public:
     if (soln.CountIn() + (totalDeg - 2) / (bestDeg * 2) + 1 >= minSoln) {
       return;
     }
-    vector<int32_t> current;
+    vector<int32_t> best(1, v), current;
     int32_t currentDeg = 0;
     for (int32_t i = soln.GetNextUnk(-1); i != -1; i = soln.GetNextUnk(i)) {
       const int32_t d = G.GetMaskedDegree(i, soln.GetUnkVector());
@@ -98,9 +95,8 @@ public:
     n[v] = true;
     // Find the neighbors of v which have not yet been evaluated
     for (int32_t i = n.FindBit(); i != -1; i = n.FindBit(++i)) {
-      BitVector n2 = G.GetEdgeSet(i) & soln.GetUnkVector();
       n[i] = false;
-      if (!((n & n2) == n)) {
+      if (!((n & G.GetEdgeSet(i) & soln.GetUnkVector()) == n)) {
         return false;
       }
       n[i] = true;
