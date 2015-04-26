@@ -84,33 +84,28 @@ public:
     // If the "best" choices are not part of the min cover, their neighbors are
     for (const auto i : best) {
       soln.ForceExclude(i);
-      soln.IncludeSet(G.GetEdgeSet(i) & soln.GetUnkVector());
+      soln.IncludeSet(G.GetEdgeSet(i));
     }
     // Return the size of the best cover found
     findCover();
   }
   bool formsClique(int32_t v) {
-    vector<int32_t> n;
+    BitVector n = G.GetEdgeSet(v) & soln.GetUnkVector();
     const int32_t d = G.GetMaskedDegree(v, soln.GetUnkVector());
-    n.reserve(d);
+    n[v] = true;
     // Find the neighbors of v which have not yet been evaluated
-    for (int32_t i = soln.GetNextUnk(-1); i != -1; i = soln.GetNextUnk(i)) {
-      if (G.HasEdgePair(v, i)) {
-        n.push_back(i);
-      }
-    }
-    for (const auto i : n) {
-      // If neighbor is not of sufficient degree to form a clique, exit
+    for (int32_t i = n.FindBit(); i != -1; i = n.FindBit(++i)) {
       if (G.GetMaskedDegree(i, soln.GetUnkVector()) < d) {
         return false;
       }
-      // Check that the edges are to the correct other nodes
-      for (const auto j : n) {
-        if (i != j && !G.HasEdgePair(i, j)) {
-          return false;
-        }
+      BitVector n2 = G.GetEdgeSet(i) & soln.GetUnkVector();
+      n[i] = false;
+      if (!((n & n2) == n)) {
+        return false;
       }
+      n[i] = true;
     }
+    // All the edge sets of the 
     return true;
   }
   void removeCliques() {
