@@ -96,7 +96,6 @@ public:
   }
   bool formsClique(int32_t v) {
     BitVector n = G.GetEdgeSet(v) & soln.GetUnkVector();
-    const int32_t d = G.GetMaskedDegree(v, soln.GetUnkVector());
     n[v] = true;
     // Find the neighbors of v which have not yet been evaluated
     for (int32_t i = n.FindBit(); i != -1; i = n.FindBit(++i)) {
