@@ -45,9 +45,6 @@ public:
     vector<int32_t> best(1, -1);
     int32_t bestDeg = 0;
     int32_t totalDeg = 0;
-    vector<int32_t> current;
-    current.reserve(2);
-    int32_t currentDeg = 0;
     for (int32_t i = soln.GetNextUnk(-1); i != -1; i = soln.GetNextUnk(i)) {
       const int32_t d = G.GetMaskedDegree(i, soln.GetUnkVector());
       totalDeg += d;
@@ -60,6 +57,9 @@ public:
     if (soln.CountIn() + (totalDeg - 2) / (bestDeg * 2) + 1 >= minSoln) {
       return;
     }
+    vector<int32_t> current;
+    current.reserve(2);
+    int32_t currentDeg = 0;
     for (int32_t i = soln.GetNextUnk(-1); i != -1; i = soln.GetNextUnk(i)) {
       const int32_t d = G.GetMaskedDegree(i, soln.GetUnkVector());
       if (d == 2) {
@@ -99,9 +99,6 @@ public:
     n[v] = true;
     // Find the neighbors of v which have not yet been evaluated
     for (int32_t i = n.FindBit(); i != -1; i = n.FindBit(++i)) {
-      if (G.GetMaskedDegree(i, soln.GetUnkVector()) < d) {
-        return false;
-      }
       BitVector n2 = G.GetEdgeSet(i) & soln.GetUnkVector();
       n[i] = false;
       if (!((n & n2) == n)) {
