@@ -90,7 +90,7 @@ public:
     }
     findMinCover();
   }
-  bool formsClique(int32_t v) {
+  bool formsClique(int32_t v) const {
     BitVector n = G.GetEdgeSet(v) & soln.GetUnkVector();
     n[v] = true;
     // Find the neighbors of v which have not yet been evaluated
