@@ -24,7 +24,7 @@ using emp::SolveState;
 class MinCover {
 public:
   MinCover(istream &is)
-      : in(is), N(*in), M(*++in), minSoln(N - 1), G(N), soln(N) {
+      : in(is), N(*in), M(*++in), G(N), soln(N), minSoln(N) {
     for (int32_t i = 0; i < M; ++i) {
       int32_t v1 = *++in, v2 = *++in;
       G.AddEdgePair(v1, v2);
@@ -32,10 +32,10 @@ public:
   }
   ~MinCover() = default;
   int32_t getMinSoln() {
-    findCover();
+    findMinCover();
     return minSoln;
   }
-  void findCover() {
+  void findMinCover() {
     removeCliques();
     // Check for completion
     if (soln.IsFinal()) {
@@ -59,7 +59,6 @@ public:
       return;
     }
     vector<int32_t> current;
-    current.reserve(2);
     int32_t currentDeg = 0;
     for (int32_t i = soln.GetNextUnk(-1); i != -1; i = soln.GetNextUnk(i)) {
       const int32_t d = G.GetMaskedDegree(i, soln.GetUnkVector());
@@ -83,7 +82,7 @@ public:
     for (const auto i : best) {
       soln.Include(i);
     }
-    findCover();
+    findMinCover();
     // Restore vertices before taking the other branch
     soln = oldSoln;
     // Look at the neighbors of the "best" cover additions for the other branch
@@ -92,7 +91,7 @@ public:
       soln.ForceExclude(i);
       soln.IncludeSet(G.GetEdgeSet(i));
     }
-    findCover();
+    findMinCover();
   }
   bool formsClique(int32_t v) {
     BitVector n = G.GetEdgeSet(v) & soln.GetUnkVector();
@@ -126,9 +125,9 @@ public:
 private:
   istream_iterator<int32_t> in;
   const int32_t N, M;
-  int32_t minSoln;
   Graph G;
   SolveState soln;
+  int32_t minSoln;
 };
 
 int main() { cout << MinCover(cin).getMinSoln() << "\n"; }
