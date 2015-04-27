@@ -31,10 +31,9 @@ using emp::SolveState;
 
 class MinCover {
 public:
-  MinCover(istream &_is)
-      : is(_is), N(*is), M(*++is), G(N), soln(N), minSoln(N) {
+  MinCover(istream &is) : it(is), N(*it), M(*++it), G(N), soln(N), minSoln(N) {
     for (int32_t i = 0; i < M; ++i) {
-      int32_t v1 = *++is, v2 = *++is;
+      int32_t v1 = *++it, v2 = *++it;
       G.AddEdgePair(v1, v2);
     }
   }
@@ -52,11 +51,10 @@ public:
     } else if (in + 1 > minSoln) {
       return;
     }
-    // BETTER BOUNDING BETWEEN HERE AND NEXT COMMENT
+    // Find the highest degree vertex
     size_t allowed = minSoln - in - 1;
     vector<int32_t> heap;
     heap.reserve(minSoln - in - 1);
-    // Find the highest degree vertex
     int32_t v = -1, bestDeg = 0, totalDeg = 0;
     for (int32_t i = soln.GetNextUnk(-1); i != -1; i = soln.GetNextUnk(i)) {
       const int32_t d = G.GetMaskedDegree(i, soln.GetUnkVector());
@@ -76,7 +74,7 @@ public:
       }
     }
     int32_t max = accumulate(begin(heap), end(heap), 0);
-    // If M/d(v) is larger than the best cover, bound
+    // If best remaining vertices are larger than the best cover, bound
     if (max < totalDeg / 2) {
       return;
     }
@@ -143,7 +141,7 @@ public:
   }
 
 private:
-  istream_iterator<int32_t> is;
+  istream_iterator<int32_t> it;
   const int32_t N, M;
   Graph G;
   SolveState soln;
