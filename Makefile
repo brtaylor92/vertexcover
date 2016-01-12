@@ -4,6 +4,9 @@ CXXFLAGS = -std=c++14 -Wall -Wextra -Wshadow -pedantic
 vcover: vcover.cc
 	$(CXX) $(CXXFLAGS) -O3 -fno-exceptions -fno-rtti -fomit-frame-pointer $< -o $@
 
+marty: marty.cpp
+	$(CXX) $(CXXFLAGS) -O3 -fno-exceptions -fno-rtti -fomit-frame-pointer $< -o $@
+
 debug: vcover.cc
 	$(CXX) $(CXXFLAGS) -O0 -g -DDEBUG $< -o $@
 
@@ -16,5 +19,8 @@ test: test.sh correct.dat clean vcover
 format: vcover.cc
 	clang-format -i $^
 
+lint: vcover.cc
+	cpplint $^
+
 clean:
-	rm -rf proj debug *.dSYM timeset.dat
+	rm -rf vcover debug *.dSYM timeset.dat
