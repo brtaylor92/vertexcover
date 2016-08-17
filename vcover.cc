@@ -157,7 +157,7 @@ public:
           }
         }
 
-        // Marty's version
+        // Marty's version of the degree 2 propagation; WIP
         /*if (deg[group[0]] > 2 || deg[group[1]] > 2) {
           for (int32_t j = 0; j < static_cast<int32_t>(group.size()); ++j) {
             buffer.clear();
@@ -239,10 +239,10 @@ private:
   int32_t M, minSoln;
   vector<bool> G;
   vector<int32_t> deg, buffer;
-  static const function<bool(bool)> exists;
+  //static const function<bool(bool)> exists;
 };
 
-const function<bool(bool)> MinCover::exists{[](const bool x) { return x; }};
+//const function<bool(bool)> MinCover::exists{[](const bool x) { return x; }};
 
 int main() {
   cout << MinCover(istream_iterator<int32_t>(cin)).findMinCover(0) << "\n";
