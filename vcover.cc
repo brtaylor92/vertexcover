@@ -3,6 +3,7 @@ using std::max_element;
 using std::min;
 
 #include <functional>
+using std::function;
 using std::greater;
 
 #include <iostream>
@@ -20,6 +21,8 @@ using std::accumulate;
 using std::vector;
 
 #include <cstdint>
+// int32_t - benchmarking shows this is faster than int16_t or int64_t
+// at least on mobile broadwell with clang 3.8
 
 class MinCover {
 public:
@@ -29,56 +32,49 @@ public:
       : N(*in), M(*++in), minSoln(N - 1), G(N * N), deg(N) {
     for (int32_t i = 0; i < M; ++i) {
       int32_t v1 = *++in, v2 = *++in;
-      G.at(v1 + v2 * N) = G.at(v2 + v1 * N) = true;
-      ++deg.at(v1);
-      ++deg.at(v2);
+      G[v1 + v2 * N] = G[v2 + v1 * N] = true;
+      ++deg[v1];
+      ++deg[v2];
     }
+    buffer.reserve(M / 2);
   }
 
   ~MinCover() = default;
 
-  MinCover(const MinCover &c) = delete;
+  MinCover(const MinCover &c) = default;
 
-  MinCover(MinCover &&c) = delete;
-
-  auto getNeighbors(const int32_t v) {
-    vector<int32_t> neighbors;
-    size_t dv = deg.at(v);
-    neighbors.reserve(dv);
-    for (int32_t i = 0; i < N && neighbors.size() < dv; ++i) {
-      if (G.at(i + v * N)) {
-        neighbors.push_back(i);
-      }
-    }
-    return neighbors;
-  }
+  MinCover(MinCover &&c) = default;
 
   int32_t removeVertex(int32_t v) {
-    for (int i = 0; i < N; ++i) {
-      if (G.at(i + v * N)) {
-        G.at(i + v * N) = G.at(v + i * N) = false;
-        --deg.at(v);
-        --deg.at(i);
+    for (int32_t i = 0; i < N; ++i) {
+      if (G[i + v * N]) {
+        G[i + v * N] = G[v + i * N] = false;
+        --deg[v];
+        --deg[i];
         --M;
       }
     }
     return 1;
   }
 
-  bool formsClique(int32_t v) const {
-    vector<int32_t> n;
-    n.reserve(deg.at(v));
+  // Profiling indicates that this function is ~1/3 of the runtime
+  // Much of that is spent in operator new - allocating n?
+  bool formsClique(int32_t v) {
+    buffer.clear();
     for (int32_t i = 0; i < N; ++i) {
-      if (G.at(i + v * N)) {
-        n.push_back(i);
+      if (G[i + v * N]) {
+        buffer.push_back(i);
       }
     }
-    for (auto i : n) {
-      if (deg.at(i) < deg.at(v)) {
+    const int32_t sz = buffer.size();
+    for (int32_t i = 0; i < sz; ++i) {
+      const auto idx = buffer.at(i);
+      if (deg[idx] < deg[v]) {
         return false;
       }
-      for (auto j : n) {
-        if (i != j && !G.at(j + i * N)) {
+      for (int32_t j = i + 1; j < sz; ++j) {
+        const auto jdx = buffer.at(j);
+        if (idx != jdx && !G[jdx + idx * N]) {
           return false;
         }
       }
@@ -89,19 +85,24 @@ public:
   int32_t removeCliques() {
     int32_t removed = 0;
     for (int32_t i = 0; i < N; ++i) {
-      if (deg.at(i) && formsClique(i)) {
+      if (deg[i] == 1) {
         for (int32_t j = 0; j < N; ++j) {
-          if (G.at(j + i * N)) {
+          if (G[j + i * N]) {
             removed += removeVertex(j);
+            break;
           }
+        }
+      } else if (deg[i] && formsClique(i)) {
+        for (auto j : buffer) {
+          removed += removeVertex(j);
         }
       }
     }
     return removed;
   }
 
-  int32_t findMinCover(int32_t sz = 0) {
-    vector<int32_t> v(1, -1);
+  int32_t findMinCover(int32_t sz) {
+    vector<int32_t> v{-1};
     int32_t bestDeg = 0;
 
     // Remove cliques/degree one vertices; these must always be in the cover
@@ -111,21 +112,17 @@ public:
 
       if (!M) {
         minSoln = min(sz, minSoln);
-        return sz;
+        return minSoln;
       } else if (sz + 1 >= minSoln) {
         return minSoln;
       }
 
-      // TODO(@BRT): Bounding from Marty
-      size_t allowed = minSoln - sz - 1;
+      // Bounding technique added from Marty
+      const size_t allowed = minSoln - sz - 1;
       vector<int32_t> heap;
-      // heap.reserve(allowed);
+      heap.reserve(allowed);
       for (int32_t i = 0; i < N; ++i) {
-        const int32_t localDeg = deg.at(i);
-        if (localDeg > bestDeg) {
-          v.front() = i;
-          bestDeg = localDeg;
-        }
+        const int32_t localDeg = deg[i];
         if (heap.size() < allowed ||
             (!heap.empty() && localDeg > heap.front())) {
           if (heap.size() < allowed) {
@@ -138,42 +135,69 @@ public:
         }
       }
 
-      int32_t max = accumulate(begin(heap), end(heap), 0);
-      int32_t totalDeg = accumulate(begin(deg), end(deg), 0);
       // If the best (minSoln - sz - 1) vertices are not sufficient, bound
-      if (max < totalDeg / 2) {
+      if (accumulate(heap.begin(), heap.end(), 0) < M) {
         return minSoln;
       }
-      // TODO(@BRT): End bounding from Marty
+      auto maxDeg = std::max_element(deg.begin(), deg.end());
+      v.front() = std::distance(deg.begin(), maxDeg);
+      bestDeg = *maxDeg;
+      // End bounding from Marty
     } while ((numRemoved = removeCliques()));
 
     // Check if there is better branch taking the neighbors of deg 2 vertices
-    // Right now, this is slower than the version that does not expand. Oops?
-    for (int i = 0; i < N; ++i) {
-      if (deg.at(i) == 2) {
-        auto current = getNeighbors(i);
-        int32_t currentDeg = deg.at(current.at(0)) + deg.at(current.at(1));
-        if (deg.at(current.at(0)) > 2 || deg.at(current.at(1)) > 2) {
-          for (int j = 0; j < static_cast<int32_t>(current.size()); ++j) {
-            for (auto k : getNeighbors(current.at(j))) {
-              if (deg.at(k) == 2 &&
-                  find(current.begin(), current.end(), k) == current.end()) {
-                auto n = getNeighbors(k);
-                int32_t far = n.at(n.at(0) == current.at(j));
+    for (int32_t i = 0; i < N; ++i) {
+      if (deg[i] == 2) {
+        vector<int32_t> group;
+        int32_t currentDeg = 0;
+        for (int32_t j = 0; j < N; ++j) {
+          if (G[j + i * N]) {
+            group.push_back(j);
+            currentDeg += deg[j];
+          }
+        }
+
+        // Marty's version
+        /*if (deg[group[0]] > 2 || deg[group[1]] > 2) {
+          for (int32_t j = 0; j < static_cast<int32_t>(group.size()); ++j) {
+            buffer.clear();
+            for (int32_t n = 0; n < N; ++n) {
+              if (G[n + j * N]) {
+                buffer.push_back(n);
+              }
+            }
+            for (auto n : buffer) {
+              if (deg[n] == 2 &&
+                  find(group.begin(), group.end(), n) == group.end()) {
+                const auto firstNeighborIt =
+                    find_if(G.begin() + n * N, G.begin() + (n + 1) * N, exists);
+                const int32_t firstNeighbor =
+                    distance(G.begin() + n * N, firstNeighborIt);
+                const auto secondNeighborIt = find_if(
+                    firstNeighborIt + 1, G.begin() + (n + 1) * N, exists);
+                const int32_t secondNeighbor =
+                    distance(G.begin() + n * N, secondNeighborIt);
+                const int32_t far =
+                    firstNeighbor == group[n] ? secondNeighbor : firstNeighbor;
                 if (far > i &&
-                    find(current.begin(), current.end(), far) ==
-                        current.end()) {
-                  current.push_back(far);
-                  currentDeg += deg.at(far);
+                    find(group.begin(), group.end(), far) == group.end()) {
+                  group.push_back(far);
                 }
               }
             }
-          }
+          }*/
+
+          // Slowdown from 6s to 25s???
+          /*currentDeg = accumulate(v.begin(), v.end(), 0,
+                                 [&](const int32_t init, const auto x) {
+                                   return init + deg[x];
+                                 });*/
+          // Stuff I already had
           if (currentDeg > bestDeg) {
-            v = current;
+            v.swap(group);
             bestDeg = currentDeg;
           }
-        }
+        //}
       }
     }
 
@@ -200,7 +224,7 @@ public:
     // are
     for (auto i : v) {
       for (int32_t j = 0; j < N; ++j) {
-        if (G.at(j + i * N)) {
+        if (G[j + i * N]) {
           sz += removeVertex(j);
         }
       }
@@ -214,9 +238,12 @@ private:
   const int32_t N;
   int32_t M, minSoln;
   vector<bool> G;
-  vector<int32_t> deg;
+  vector<int32_t> deg, buffer;
+  static const function<bool(bool)> exists;
 };
 
+const function<bool(bool)> MinCover::exists{[](const bool x) { return x; }};
+
 int main() {
-  cout << MinCover(istream_iterator<int32_t>(cin)).findMinCover() << "\n";
+  cout << MinCover(istream_iterator<int32_t>(cin)).findMinCover(0) << "\n";
 }
