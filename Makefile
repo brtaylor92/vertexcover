@@ -7,7 +7,7 @@ vcover: vcover.cc
 	$(CXX) $(CXXFLAGS) -O3 -fno-exceptions -fno-rtti -fomit-frame-pointer $< -o $@
 
 debug: vcover.cc
-	$(CXX) $(CXXFLAGS) -O3 -g -DDEBUG $< -o $@
+	$(CXX) $(CXXFLAGS) -g -DDEBUG $< -o $@
 
 test: test.sh correct.dat clean vcover
 	./$< ./vcover 3

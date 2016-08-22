@@ -4,6 +4,7 @@ debug
 soln
 *.dSYM
 *.dtps
+.DS_Store
 CPPLINT.cfg
 generateChain.py
 correct.dat

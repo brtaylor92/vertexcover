@@ -45,25 +45,28 @@ public:
 
   MinCover(MinCover &&c) = default;
 
-  int32_t removeVertex(int32_t v) {
-    for (int32_t i = 0; i < N; ++i) {
-      if (G[i + v * N]) {
-        G[i + v * N] = G[v + i * N] = false;
-        --deg[v];
-        --deg[i];
-        --M;
-      }
+  void removeVertex(int32_t v) {
+    const auto degV = deg[v];
+    deg[v] = 0;
+    M -= degV;
+    const auto first = G.begin() + v * N, last = first + N;
+    auto start = first;
+    for (int32_t i = 0; i < degV; ++i) {
+      auto next = find(start, last, true);
+      const auto idx = distance(first, next);
+      G[v + idx * N] = false;
+      --deg[idx];
+      start = next + 1;
     }
-    return 1;
   }
 
   // Profiling indicates that this function is ~1/3 of the runtime
-  bool formsClique(int32_t v) {
+  bool isExposedNode(int32_t v) {
     buffer.clear();
-    int32_t vDeg = deg.at(v);
+    const int32_t degV = deg.at(v);
     const auto first = G.begin() + v * N;
     auto start = first, end = first + N;
-    for (int32_t i = 0; i < vDeg; ++i) {
+    for (int32_t i = 0; i < degV; ++i) {
       auto next = find(start, end, true);
       buffer.push_back(distance(first, next));
       start = next + 1;
@@ -71,7 +74,7 @@ public:
     const int32_t sz = buffer.size();
     for (int32_t i = 0; i < sz; ++i) {
       const auto idx = buffer.at(i);
-      if (deg[idx] < deg[v]) {
+      if (deg[idx] < degV) {
         return false;
       }
       for (int32_t j = i + 1; j < sz; ++j) {
@@ -87,12 +90,15 @@ public:
   int32_t removeCliques() {
     int32_t removed = 0;
     for (int32_t i = 0; i < N; ++i) {
-      if (deg[i] == 1) {
+      const auto degI = deg[i];
+      if (degI == 1) {
         const auto start = G.begin() + i * N;
-        removed += removeVertex(distance(start, find(start, start + N, true)));
-      } else if (deg[i] && formsClique(i)) {
+        removeVertex(distance(start, find(start, start + N, true)));
+        ++removed;
+      } else if (degI && isExposedNode(i)) {
+        removed += degI;
         for (auto j : buffer) {
-          removed += removeVertex(j);
+          removeVertex(j);
         }
       }
     }
@@ -111,7 +117,6 @@ public:
 
       if (!M) {
         return minSoln = min(sz, minSoln);
-        ;
       } else if (sz + 1 >= minSoln) {
         return minSoln;
       }
@@ -138,8 +143,8 @@ public:
         return minSoln;
       }
 
-      auto maxDeg = std::max_element(deg.begin(), deg.end());
-      v.front() = std::distance(deg.begin(), maxDeg);
+      auto maxDeg = max_element(deg.begin(), deg.end());
+      v.front() = distance(deg.begin(), maxDeg);
       bestDeg = *maxDeg;
       // End bounding from Marty
     } while ((numRemoved = removeCliques()));
@@ -155,6 +160,40 @@ public:
         const int32_t secondIdx = distance(start, second);
         currentDeg = deg[firstIdx] + deg[secondIdx];
 
+        // Marty's version of the degree 2 propagation; WIP
+        /*if (deg[firstIdx] > 2 || deg[secondIdx] > 2) {
+          buffer = {firstIdx, secondIdx};
+          for (int32_t j = 0; j < static_cast<int32_t>(buffer.size()); ++j) {
+            const auto degJ = deg[j];
+            const auto firstNeighbor = G.begin() + j * N,
+                       last = firstNeighbor + N;
+            auto startNeighbor = firstNeighbor;
+            for (int32_t n = 0; n < degJ; ++n) {
+              auto next = find(startNeighbor, last, true);
+              const auto idx = distance(firstNeighbor, next);
+              if (deg[idx] == 2 &&
+                  find(buffer.begin(), buffer.end(), idx) == buffer.end()) {
+                const auto startSearch = G.begin() + idx * N,
+                           endSearch = startSearch + N;
+                auto firstNewNeighbor = find(startSearch, endSearch, true);
+                auto secondNewNeighbor = find(startSearch + 1, endSearch, true);
+                auto firstNeighborIdx = distance(startSearch, firstNewNeighbor);
+                auto secondNeighborIdx =
+                    distance(startSearch, secondNewNeighbor);
+                int32_t far = firstNeighborIdx == buffer[j] ? secondNeighborIdx
+                                                            : firstNeighborIdx;
+                if (far > i &&
+                    find(buffer.begin(), buffer.end(), far) == buffer.end()) {
+                  buffer.push_back(far);
+                  currentDeg += deg[far];
+                }
+              }
+              startNeighbor = next + 1;
+            }
+          }
+        }*/
+
+        // Stuff I already had
         if (currentDeg > bestDeg) {
           v = {firstIdx, secondIdx};
           bestDeg = currentDeg;
@@ -189,7 +228,8 @@ public:
       const auto end = first + N;
       for (int32_t j = 0; j < iDeg; ++j) {
         auto next = find(start, end, true);
-        sz += removeVertex(distance(first, next));
+        ++sz;
+        removeVertex(distance(first, next));
         start = next + 1;
       }
     }
@@ -203,10 +243,7 @@ private:
   int32_t M, minSoln;
   vector<bool> G;
   vector<int32_t> deg, buffer;
-  // static const function<bool(bool)> exists;
 };
-
-// const function<bool(bool)> MinCover::exists{[](const bool x) { return x; }};
 
 int main() {
   cout << MinCover(istream_iterator<int32_t>(cin)).findMinCover(0) << "\n";
