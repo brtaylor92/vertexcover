@@ -1,17 +1,17 @@
 #include <algorithm>
+using std::max_element;
 using std::min;
-using std::pop_heap;
-using std::push_heap;
 
 #include <functional>
+using std::function;
 using std::greater;
 
 #include <iostream>
 using std::cin;
 using std::cout;
-using std::istream;
 
 #include <iterator>
+using std::distance;
 using std::istream_iterator;
 
 #include <numeric>
@@ -20,147 +20,194 @@ using std::accumulate;
 #include <vector>
 using std::vector;
 
-#include "Empirical/tools/BitVector.h"
-using emp::BitVector;
-
-#include "Empirical/tools/Graph.h"
-using emp::Graph;
-
-#include "Empirical/tools/SolveState.h"
-using emp::SolveState;
+#include <cstdint>
+// int32_t - benchmarking shows this is faster than int16_t or int64_t
+// at least on mobile broadwell with clang 3.8
 
 class MinCover {
 public:
-  MinCover(istream &is) : it(is), N(*it), M(*++it), G(N), soln(N), minSoln(N) {
-    for (int32_t i = 0; i < M; ++i) {
-      int32_t v1 = *++it, v2 = *++it;
-      G.AddEdgePair(v1, v2);
-    }
-  }
-  ~MinCover() = default;
-  int32_t getMinSoln() {
-    findMinCover();
-    return minSoln;
-  }
-  void findMinCover() {
-    bool polyOps = true;
-    int32_t v = -1, bestDeg = 0;
-    while (polyOps) {
-      polyOps = false;
+  MinCover() = delete;
 
-      for (int32_t i = soln.GetNextUnk(-1); i != -1; i = soln.GetNextUnk(i)) {
-        // If degree 0, exclude
-        if (!G.GetMaskedDegree(i, soln.GetUnkVector())) {
-          soln.Exclude(i);
-        } else if (formsClique(i)) {
-          // If we have a clique, include the neighbors and exclude this node
-          soln.IncludeSet(G.GetEdgeSet(i));
-          soln.Exclude(i);
-          polyOps = true;
-        }
-      }
-      const int32_t in = soln.CountIn();
-      if (soln.IsFinal()) {
-        minSoln = min(minSoln, in);
-        return;
-      } else if (in + 1 > minSoln) {
-        return;
-      }
-      // Find the highest degree vertex
-      size_t allowed = minSoln - in - 1;
-      vector<int32_t> heap;
-      heap.reserve(minSoln - in - 1);
-      int32_t totalDeg = 0;
-      for (int32_t i = soln.GetNextUnk(-1); i != -1; i = soln.GetNextUnk(i)) {
-        const int32_t d = G.GetMaskedDegree(i, soln.GetUnkVector());
-        totalDeg += d;
-        if (d > bestDeg) {
-          v = i;
-          bestDeg = d;
-        }
-        if (heap.size() < allowed || (heap.size() && d > heap.at(0))) {
-          if (heap.size() < allowed) {
-            heap.push_back(d);
-          } else {
-            pop_heap(begin(heap), end(heap), greater<int32_t>());
-            heap.back() = d;
-          }
-          push_heap(begin(heap), end(heap), greater<int32_t>());
-        }
-      }
-      int32_t max = accumulate(begin(heap), end(heap), 0);
-      // If best remaining vertices are larger than the best cover, bound
-      if (max < totalDeg / 2) {
-        return;
+  explicit MinCover(istream_iterator<int32_t> in)
+      : N(*in), M(*++in), minSoln(N - 1), G(N * N), deg(N) {
+    for (int32_t i = 0; i < M; ++i) {
+      int32_t v1 = *++in, v2 = *++in;
+      G[v1 + v2 * N] = G[v2 + v1 * N] = true;
+      ++deg[v1];
+      ++deg[v2];
+    }
+    buffer.reserve(M / 2);
+  }
+
+  ~MinCover() = default;
+
+  MinCover(const MinCover &c) = default;
+
+  MinCover(MinCover &&c) = default;
+
+  int32_t removeVertex(int32_t v) {
+    for (int32_t i = 0; i < N; ++i) {
+      if (G[i + v * N]) {
+        G[i + v * N] = G[v + i * N] = false;
+        --deg[v];
+        --deg[i];
+        --M;
       }
     }
-    // Try to beat the highest degree with a pair of neighbors of deg-2 vertex
-    vector<int32_t> best(1, v), current;
-    for (int32_t i = soln.GetNextUnk(-1); i != -1; i = soln.GetNextUnk(i)) {
-      const int32_t d = G.GetMaskedDegree(i, soln.GetUnkVector());
-      if (d == 2) {
-        const BitVector &n = G.GetEdgeSet(i) & soln.GetUnkVector();
-        int32_t v1 = n.FindBit();
-        int32_t v2 = n.FindBit(v1 + 1);
-        current = {v1, v2};
-        int32_t currentDeg = G.GetMaskedDegree(v1, soln.GetUnkVector()) +
-                             G.GetMaskedDegree(v2, soln.GetUnkVector());
-        for (size_t j = 0; j < current.size(); ++j) {
-          const BitVector &e =
-              G.GetEdgeSet(current.at(j)) & soln.GetUnkVector();
-          for (int32_t k = e.FindBit(); k != -1; k = e.FindBit(++k)) {
-            if (G.GetMaskedDegree(k, soln.GetUnkVector()) == 2 &&
-                find(begin(current), end(current), k) == end(current)) {
-              int32_t far = (G.GetEdgeSet(k) & soln.GetUnkVector()).FindBit();
-              if (find(begin(current), end(current), far) == end(current)) {
-                current.push_back(far);
-                currentDeg += G.GetMaskedDegree(far, soln.GetUnkVector());
-              }
-            }
-          }
+    return 1;
+  }
+
+  // Profiling indicates that this function is ~1/3 of the runtime
+  bool formsClique(int32_t v) {
+    buffer.clear();
+    int32_t vDeg = deg.at(v);
+    const auto first = G.begin() + v * N;
+    auto start = first, end = first + N;
+    for (int32_t i = 0; i < vDeg; ++i) {
+      auto next = find(start, end, true);
+      buffer.push_back(distance(first, next));
+      start = next + 1;
+    }
+    const int32_t sz = buffer.size();
+    for (int32_t i = 0; i < sz; ++i) {
+      const auto idx = buffer.at(i);
+      if (deg[idx] < deg[v]) {
+        return false;
+      }
+      for (int32_t j = i + 1; j < sz; ++j) {
+        const auto jdx = buffer.at(j);
+        if (idx != jdx && !G[jdx + idx * N]) {
+          return false;
         }
+      }
+    }
+    return true;
+  }
+
+  int32_t removeCliques() {
+    int32_t removed = 0;
+    for (int32_t i = 0; i < N; ++i) {
+      if (deg[i] == 1) {
+        const auto start = G.begin() + i * N;
+        removed += removeVertex(distance(start, find(start, start + N, true)));
+      } else if (deg[i] && formsClique(i)) {
+        for (auto j : buffer) {
+          removed += removeVertex(j);
+        }
+      }
+    }
+    return removed;
+  }
+
+  int32_t findMinCover(int32_t sz) {
+    vector<int32_t> v{-1};
+    v.reserve(M / 2);
+    int32_t bestDeg = 0;
+
+    // Remove cliques/degree one vertices; these must always be in the cover
+    int32_t numRemoved = 0;
+    do {
+      sz += numRemoved;
+
+      if (!M) {
+        return minSoln = min(sz, minSoln);
+        ;
+      } else if (sz + 1 >= minSoln) {
+        return minSoln;
+      }
+
+      // Bounding technique added from Marty
+      const size_t allowed = minSoln - sz - 1;
+      buffer.clear();
+      for (int32_t i = 0; i < N; ++i) {
+        const int32_t localDeg = deg[i];
+        const auto bufSz = buffer.size();
+        if (bufSz < allowed || (bufSz && localDeg > buffer.front())) {
+          if (bufSz < allowed) {
+            buffer.push_back(localDeg);
+          } else {
+            pop_heap(buffer.begin(), buffer.end(), greater<int32_t>());
+            buffer.back() = localDeg;
+          }
+          push_heap(buffer.begin(), buffer.end(), greater<int32_t>());
+        }
+      }
+
+      // If the best (minSoln - sz - 1) vertices are not sufficient, bound
+      if (accumulate(buffer.begin(), buffer.end(), 0) < M) {
+        return minSoln;
+      }
+
+      auto maxDeg = std::max_element(deg.begin(), deg.end());
+      v.front() = std::distance(deg.begin(), maxDeg);
+      bestDeg = *maxDeg;
+      // End bounding from Marty
+    } while ((numRemoved = removeCliques()));
+
+    // Check if there is better branch taking the neighbors of deg 2 vertices
+    int32_t currentDeg = 0;
+    for (int32_t i = 0; i < N; ++i) {
+      if (deg[i] == 2) {
+        const auto start = G.begin() + i * N, end = start + N;
+        const auto first = find(start, end, true);
+        const auto second = find(first + 1, end, true);
+        const int32_t firstIdx = distance(start, first);
+        const int32_t secondIdx = distance(start, second);
+        currentDeg = deg[firstIdx] + deg[secondIdx];
+
         if (currentDeg > bestDeg) {
-          best = current;
+          v = {firstIdx, secondIdx};
           bestDeg = currentDeg;
         }
       }
     }
-    // Save the solution state before recursing and consider the next cover
-    SolveState oldSoln = soln;
-    for (const auto i : best) {
-      soln.Include(i);
+
+    // Save the graph and related information before removing optional
+    // vertices
+    int32_t oldM = M;
+    auto oldDeg = deg;
+    auto oldG = G;
+
+    // Try removing the "best" vertices
+    for (auto i : v) {
+      removeVertex(i);
     }
-    findMinCover();
-    // Restore solution before taking the other branch
-    soln = oldSoln;
-    // If the "best" choices are not part of the min cover, their neighbors are
-    for (const auto i : best) {
-      soln.ForceExclude(i);
-      soln.IncludeSet(G.GetEdgeSet(i));
-    }
-    findMinCover();
-  }
-  bool formsClique(int32_t v) const {
-    BitVector n = G.GetEdgeSet(v) & soln.GetUnkVector();
-    n[v] = true;
-    // Find the neighbors of v which have not yet been evaluated
-    for (int32_t i = n.FindBit(); i != -1; i = n.FindBit(++i)) {
-      n[i] = false;
-      if (!((n & G.GetEdgeSet(i) & soln.GetUnkVector()) == n)) {
-        return false;
+    int32_t likely = findMinCover(sz + v.size());
+
+    // Restore those vertices before taking the other branch
+    M = oldM;
+    deg.swap(oldDeg);
+    G.swap(oldG);
+
+    // Look at the neighbors of the "best" cover additions for the other
+    // branch
+    // If the "best" choices are not part of the min cover, their neighbors
+    // are
+    for (auto i : v) {
+      const auto iDeg = deg[i];
+      auto first = G.begin() + i * N, start = first;
+      const auto end = first + N;
+      for (int32_t j = 0; j < iDeg; ++j) {
+        auto next = find(start, end, true);
+        sz += removeVertex(distance(first, next));
+        start = next + 1;
       }
-      n[i] = true;
     }
-    // V and its neighbors form a clique
-    return true;
+
+    // Return the size of the best cover found
+    return min(likely, findMinCover(sz));
   }
 
 private:
-  istream_iterator<int32_t> it;
-  const int32_t N, M;
-  Graph G;
-  SolveState soln;
-  int32_t minSoln;
+  const int32_t N;
+  int32_t M, minSoln;
+  vector<bool> G;
+  vector<int32_t> deg, buffer;
+  // static const function<bool(bool)> exists;
 };
 
-int main() { cout << MinCover(cin).getMinSoln() << "\n"; }
+// const function<bool(bool)> MinCover::exists{[](const bool x) { return x; }};
+
+int main() {
+  cout << MinCover(istream_iterator<int32_t>(cin)).findMinCover(0) << "\n";
+}

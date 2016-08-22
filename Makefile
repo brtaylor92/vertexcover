@@ -1,14 +1,13 @@
-CXX = clang++
-CXXFLAGS = -std=c++11 -Wall -Wextra -Wshadow -pedantic -march=corei7 -fomit-frame-pointer
+CXX = clang++-3.8
+CXXFLAGS = -std=c++14 -Wall -Wextra -Wshadow -pedantic
 
-vcover: vcover.cc Empirical/tools/BitVector.h Empirical/tools/Graph.h Empirical/tools/SolveState.h
-	$(CXX) $(CXXFLAGS) -O3 $< -o $@
+.PHONY: clean
 
-debug: vcover.cc Empirical/tools/BitVector.h Empirical/tools/Graph.h Empirical/tools/SolveState.h
-		$(CXX) $(CXXFLAGS) -O0 -g -DDEBUG $< -o $@
+vcover: vcover.cc
+	$(CXX) $(CXXFLAGS) -O3 -fno-exceptions -fno-rtti -fomit-frame-pointer $< -o $@
 
-soln: Empirical/utils/graphs/vcover.cc
-	$(CXX) $(CXXFLAGS) -O3 $< -o $@
+debug: vcover.cc
+	$(CXX) $(CXXFLAGS) -O3 -g -DDEBUG $< -o $@
 
 test: test.sh correct.dat clean vcover
 	./$< ./vcover 3
@@ -16,5 +15,8 @@ test: test.sh correct.dat clean vcover
 format: vcover.cc
 	clang-format -i $^
 
+lint: vcover.cc
+	cpplint $^
+
 clean:
-	rm -rf vcover debug *.dSYM timeset.dat
+	rm -rf vcover debug *.dSYM *.dtps timeset.dat
