@@ -1,6 +1,7 @@
 #include <algorithm>
 using std::max_element;
 using std::min;
+using std::nth_element;
 
 #include <functional>
 using std::function;
@@ -16,6 +17,7 @@ using std::istream_iterator;
 
 #include <numeric>
 using std::accumulate;
+using std::iota;
 
 #include <vector>
 using std::vector;
@@ -29,13 +31,14 @@ public:
   MinCover() = delete;
 
   explicit MinCover(istream_iterator<int32_t> in)
-      : N(*in), M(*++in), minSoln(N - 1), G(N * N), deg(N) {
+      : N(*in), M(*++in), minSoln(N - 1), G(N * N), deg(N), indices(N) {
     for (int32_t i = 0; i < M; ++i) {
       int32_t v1 = *++in, v2 = *++in;
       G[v1 + v2 * N] = G[v2 + v1 * N] = true;
       ++deg[v1];
       ++deg[v2];
     }
+    iota(indices.begin(), indices.end(), 0);
     buffer.reserve(M / 2);
   }
 
@@ -120,32 +123,20 @@ public:
         return minSoln;
       }
 
-      // Bounding technique added from Marty
-      const size_t allowed = minSoln - sz - 1;
-      buffer.clear();
-      for (int32_t i = 0; i < N; ++i) {
-        const int32_t localDeg = deg[i];
-        const auto bufSz = buffer.size();
-        if (bufSz < allowed || (bufSz && localDeg > buffer.front())) {
-          if (bufSz < allowed) {
-            buffer.push_back(localDeg);
-          } else {
-            pop_heap(buffer.begin(), buffer.end(), greater<int32_t>());
-            buffer.back() = localDeg;
-          }
-          push_heap(buffer.begin(), buffer.end(), greater<int32_t>());
-        }
-      }
-
       // If the best (minSoln - sz - 1) vertices are not sufficient, bound
-      if (accumulate(buffer.begin(), buffer.end(), 0) < M) {
+      const size_t allowed = minSoln - sz - 1;
+      nth_element(indices.begin(), indices.begin() + allowed, indices.end(),
+                  [&](const auto l, const auto r) { return deg[l] > deg[r]; });
+      const int32_t bestPossible =
+          accumulate(indices.begin(), indices.begin() + allowed, 0,
+                     [&](const int i, const auto x) { return i + deg[x]; });
+      if (bestPossible < M) {
         return minSoln;
       }
 
       const auto maxDeg = max_element(deg.begin(), deg.end());
       v.front() = distance(deg.begin(), maxDeg);
       bestDeg = *maxDeg;
-      // End bounding from Marty
     } while ((numRemoved = removeCliques()));
 
     // Check if there is better branch taking the neighbors of deg 2 vertices
@@ -240,7 +231,7 @@ private:
   const int32_t N;
   int32_t M, minSoln;
   vector<bool> G;
-  vector<int32_t> deg, buffer;
+  vector<int32_t> deg, indices, buffer;
 };
 
 int main() {
