@@ -1,11 +1,10 @@
 vcover
+extra
 debug
 soln
 *.dSYM
 *.dtps
 CPPLINT.cfg
 generateChain.py
-timeset.dat
 correct.dat
 timeset.dat
-vcover
