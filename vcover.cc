@@ -149,7 +149,6 @@ public:
     } while ((numRemoved = removeCliques()));
 
     // Check if there is better branch taking the neighbors of deg 2 vertices
-    int32_t currentDeg = 0;
     for (int32_t i = 0; i < N; ++i) {
       if (deg[i] == 2) {
         const auto start = G.begin() + i * N, end = start + N;
@@ -157,7 +156,7 @@ public:
         const auto second = find(first + 1, end, true);
         const int32_t firstIdx = distance(start, first);
         const int32_t secondIdx = distance(start, second);
-        currentDeg = deg[firstIdx] + deg[secondIdx];
+        const int32_t currentDeg = deg[firstIdx] + deg[secondIdx];
 
         // Marty's version of the degree 2 propagation; WIP
         /*if (deg[firstIdx] > 2 || deg[secondIdx] > 2) {
