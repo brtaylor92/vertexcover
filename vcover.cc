@@ -41,18 +41,18 @@ public:
 
   ~MinCover() = default;
 
-  MinCover(const MinCover &c) = default;
+  MinCover(const MinCover &c) = delete;
 
-  MinCover(MinCover &&c) = default;
+  MinCover(MinCover &&c) = delete;
 
-  void removeVertex(int32_t v) {
+  void removeVertex(const int32_t v) {
     const auto degV = deg[v];
     deg[v] = 0;
     M -= degV;
     const auto first = G.begin() + v * N, last = first + N;
     auto start = first;
     for (int32_t i = 0; i < degV; ++i) {
-      auto next = find(start, last, true);
+      const auto next = find(start, last, true);
       const auto idx = distance(first, next);
       G[v + idx * N] = false;
       --deg[idx];
@@ -61,24 +61,23 @@ public:
   }
 
   // Profiling indicates that this function is ~1/3 of the runtime
-  bool isExposedNode(int32_t v) {
+  bool isExposedNode(const int32_t v) {
     buffer.clear();
-    const int32_t degV = deg.at(v);
-    const auto first = G.begin() + v * N;
-    auto start = first, end = first + N;
+    const int32_t degV = deg[v];
+    const auto first = G.begin() + v * N, end = first + N;
+    auto start = first;
     for (int32_t i = 0; i < degV; ++i) {
-      auto next = find(start, end, true);
+      const auto next = find(start, end, true);
       buffer.push_back(distance(first, next));
       start = next + 1;
     }
-    const int32_t sz = buffer.size();
-    for (int32_t i = 0; i < sz; ++i) {
-      const auto idx = buffer.at(i);
+    for (int32_t i = 0; i < degV; ++i) {
+      const auto idx = buffer[i];
       if (deg[idx] < degV) {
         return false;
       }
-      for (int32_t j = i + 1; j < sz; ++j) {
-        const auto jdx = buffer.at(j);
+      for (int32_t j = i + 1; j < degV; ++j) {
+        const auto jdx = buffer[j];
         if (idx != jdx && !G[jdx + idx * N]) {
           return false;
         }
@@ -92,12 +91,12 @@ public:
     for (int32_t i = 0; i < N; ++i) {
       const auto degI = deg[i];
       if (degI == 1) {
+        ++removed;
         const auto start = G.begin() + i * N;
         removeVertex(distance(start, find(start, start + N, true)));
-        ++removed;
       } else if (degI && isExposedNode(i)) {
         removed += degI;
-        for (auto j : buffer) {
+        for (const auto j : buffer) {
           removeVertex(j);
         }
       }
@@ -143,7 +142,7 @@ public:
         return minSoln;
       }
 
-      auto maxDeg = max_element(deg.begin(), deg.end());
+      const auto maxDeg = max_element(deg.begin(), deg.end());
       v.front() = distance(deg.begin(), maxDeg);
       bestDeg = *maxDeg;
       // End bounding from Marty
@@ -203,15 +202,15 @@ public:
 
     // Save the graph and related information before removing optional
     // vertices
-    int32_t oldM = M;
+    const int32_t oldM = M;
     auto oldDeg = deg;
     auto oldG = G;
 
     // Try removing the "best" vertices
-    for (auto i : v) {
+    for (const auto i : v) {
       removeVertex(i);
     }
-    int32_t likely = findMinCover(sz + v.size());
+    const int32_t likely = findMinCover(sz + v.size());
 
     // Restore those vertices before taking the other branch
     M = oldM;
@@ -222,12 +221,12 @@ public:
     // branch
     // If the "best" choices are not part of the min cover, their neighbors
     // are
-    for (auto i : v) {
+    for (const auto i : v) {
       const auto iDeg = deg[i];
-      auto first = G.begin() + i * N, start = first;
-      const auto end = first + N;
+      const auto first = G.begin() + i * N, end = first + N;
+      auto start = first;
       for (int32_t j = 0; j < iDeg; ++j) {
-        auto next = find(start, end, true);
+        const auto next = find(start, end, true);
         ++sz;
         removeVertex(distance(first, next));
         start = next + 1;
