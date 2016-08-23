@@ -31,7 +31,8 @@ public:
   MinCover() = delete;
 
   explicit MinCover(istream_iterator<int32_t> in)
-      : N(*in), M(*++in), minSoln(N - 1), G(N * N), deg(N), indices(N) {
+      : N(*in), M(*++in), minSoln(N - 1), G(N * N), mayBeExposedNode(N, true),
+        deg(N), indices(N) {
     for (int32_t i = 0; i < M; ++i) {
       const int32_t v1 = *++in, v2 = *++in;
       G[v1 + v2 * N] = G[v2 + v1 * N] = true;
@@ -58,6 +59,7 @@ public:
       const auto next = find(start, last, true);
       const auto idx = distance(first, next);
       G[v + idx * N] = false;
+      mayBeExposedNode[idx] = true;
       --deg[idx];
       start = next + 1;
     }
@@ -66,6 +68,7 @@ public:
   // Profiling indicates that this function is ~1/3 of the runtime
   bool isExposedNode(const int32_t v) {
     const int32_t degV = deg[v];
+    mayBeExposedNode[v] = false;
     const auto first = G.begin() + v * N, end = first + N;
     auto start = first;
     for (int32_t i = 0; i < degV; ++i) {
@@ -97,7 +100,7 @@ public:
         ++removed;
         const auto start = G.begin() + i * N;
         removeVertex(distance(start, find(start, start + N, true)));
-      } else if (degI && isExposedNode(i)) {
+      } else if (mayBeExposedNode[i] && isExposedNode(i)) {
         removed += degI;
         for (int32_t j = 0; j < degI; ++j) {
           removeVertex(buffer[j]);
@@ -113,8 +116,8 @@ public:
     do {
       sz += numRemoved;
 
-      if (!M) {
-        return minSoln = min(sz, minSoln);
+      if (!M && sz < minSoln) {
+        return minSoln = sz;
       } else if (sz + 1 >= minSoln) {
         return minSoln;
       }
@@ -135,7 +138,7 @@ public:
     vector<int32_t> v{static_cast<int32_t>(distance(deg.begin(), maxDeg))};
     int32_t bestDeg = *maxDeg;
 
-    // Check if there is better branch taking the neighbors of deg 2 vertices
+    // Check if there is better branch taking the neighbors of deg 2 vertex
     for (int32_t i = 0; i < N; ++i) {
       if (deg[i] == 2) {
         const auto start = G.begin() + i * N, end = start + N;
@@ -144,41 +147,6 @@ public:
         const int32_t firstIdx = distance(start, first);
         const int32_t secondIdx = distance(start, second);
         const int32_t currentDeg = deg[firstIdx] + deg[secondIdx];
-
-        // Marty's version of the degree 2 propagation; WIP
-        /*if (deg[firstIdx] > 2 || deg[secondIdx] > 2) {
-          buffer = {firstIdx, secondIdx};
-          for (int32_t j = 0; j < static_cast<int32_t>(buffer.size()); ++j) {
-            const auto degJ = deg[j];
-            const auto firstNeighbor = G.begin() + j * N,
-                       last = firstNeighbor + N;
-            auto startNeighbor = firstNeighbor;
-            for (int32_t n = 0; n < degJ; ++n) {
-              auto next = find(startNeighbor, last, true);
-              const auto idx = distance(firstNeighbor, next);
-              if (deg[idx] == 2 &&
-                  find(buffer.begin(), buffer.end(), idx) == buffer.end()) {
-                const auto startSearch = G.begin() + idx * N,
-                           endSearch = startSearch + N;
-                auto firstNewNeighbor = find(startSearch, endSearch, true);
-                auto secondNewNeighbor = find(startSearch + 1, endSearch, true);
-                auto firstNeighborIdx = distance(startSearch, firstNewNeighbor);
-                auto secondNeighborIdx =
-                    distance(startSearch, secondNewNeighbor);
-                int32_t far = firstNeighborIdx == buffer[j] ? secondNeighborIdx
-                                                            : firstNeighborIdx;
-                if (far > i &&
-                    find(buffer.begin(), buffer.end(), far) == buffer.end()) {
-                  buffer.push_back(far);
-                  currentDeg += deg[far];
-                }
-              }
-              startNeighbor = next + 1;
-            }
-          }
-        }*/
-
-        // Stuff I already had
         if (currentDeg > bestDeg) {
           v.assign({firstIdx, secondIdx});
           bestDeg = currentDeg;
@@ -213,9 +181,9 @@ public:
       auto start = first;
       for (int32_t j = 0; j < iDeg; ++j) {
         const auto next = find(start, end, true);
-        ++sz;
         removeVertex(distance(first, next));
         start = next + 1;
+        ++sz;
       }
     }
 
@@ -226,7 +194,7 @@ public:
 private:
   const int32_t N;
   int32_t M, minSoln;
-  vector<bool> G;
+  vector<bool> G, mayBeExposedNode;
   vector<int32_t> deg, indices, buffer;
 };
 
