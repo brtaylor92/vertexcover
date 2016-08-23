@@ -110,7 +110,6 @@ public:
 
   int32_t findMinCover(int32_t sz) {
     vector<int32_t> v{-1};
-    v.reserve(M / 2);
     int32_t bestDeg = 0;
 
     // Remove cliques/degree one vertices; these must always be in the cover
@@ -185,7 +184,7 @@ public:
 
         // Stuff I already had
         if (currentDeg > bestDeg) {
-          v = {firstIdx, secondIdx};
+          v.assign({firstIdx, secondIdx});
           bestDeg = currentDeg;
         }
       }
