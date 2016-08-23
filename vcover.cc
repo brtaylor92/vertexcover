@@ -71,14 +71,15 @@ public:
     auto start = first;
     for (int32_t i = 0; i < degV; ++i) {
       const auto next = find(start, end, true);
-      buffer.push_back(distance(first, next));
+      const auto idx = distance(first, next);
+      if (deg[idx] < degV) {
+        return false;
+      }
+      buffer.push_back(idx);
       start = next + 1;
     }
     for (int32_t i = 0; i < degV; ++i) {
       const auto idx = buffer[i];
-      if (deg[idx] < degV) {
-        return false;
-      }
       for (int32_t j = i + 1; j < degV; ++j) {
         const auto jdx = buffer[j];
         if (idx != jdx && !G[jdx + idx * N]) {
