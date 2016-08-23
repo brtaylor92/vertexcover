@@ -33,7 +33,7 @@ public:
   explicit MinCover(istream_iterator<int32_t> in)
       : N(*in), M(*++in), minSoln(N - 1), G(N * N), deg(N), indices(N) {
     for (int32_t i = 0; i < M; ++i) {
-      int32_t v1 = *++in, v2 = *++in;
+      const int32_t v1 = *++in, v2 = *++in;
       G[v1 + v2 * N] = G[v2 + v1 * N] = true;
       ++deg[v1];
       ++deg[v2];
@@ -65,7 +65,6 @@ public:
 
   // Profiling indicates that this function is ~1/3 of the runtime
   bool isExposedNode(const int32_t v) {
-    buffer.clear();
     const int32_t degV = deg[v];
     const auto first = G.begin() + v * N, end = first + N;
     auto start = first;
@@ -75,7 +74,7 @@ public:
       if (deg[idx] < degV) {
         return false;
       }
-      buffer.push_back(idx);
+      buffer[i] = idx;
       start = next + 1;
     }
     for (int32_t i = 0; i < degV; ++i) {
@@ -100,8 +99,8 @@ public:
         removeVertex(distance(start, find(start, start + N, true)));
       } else if (degI && isExposedNode(i)) {
         removed += degI;
-        for (const auto j : buffer) {
-          removeVertex(j);
+        for (int32_t j = 0; j < degI; ++j) {
+          removeVertex(buffer[j]);
         }
       }
     }
@@ -109,9 +108,6 @@ public:
   }
 
   int32_t findMinCover(int32_t sz) {
-    vector<int32_t> v{-1};
-    int32_t bestDeg = 0;
-
     // Remove cliques/degree one vertices; these must always be in the cover
     int32_t numRemoved = 0;
     do {
@@ -129,15 +125,15 @@ public:
                   [&](const auto l, const auto r) { return deg[l] > deg[r]; });
       const int32_t bestPossible =
           accumulate(indices.begin(), indices.begin() + allowed, 0,
-                     [&](const int i, const auto x) { return i + deg[x]; });
+                     [&](const int32_t i, const auto x) { return i + deg[x]; });
       if (bestPossible < M) {
         return minSoln;
       }
-
-      const auto maxDeg = max_element(deg.begin(), deg.end());
-      v.front() = distance(deg.begin(), maxDeg);
-      bestDeg = *maxDeg;
     } while ((numRemoved = removeCliques()));
+
+    const auto maxDeg = max_element(deg.begin(), deg.end());
+    vector<int32_t> v{static_cast<int32_t>(distance(deg.begin(), maxDeg))};
+    int32_t bestDeg = *maxDeg;
 
     // Check if there is better branch taking the neighbors of deg 2 vertices
     for (int32_t i = 0; i < N; ++i) {
