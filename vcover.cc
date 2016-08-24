@@ -6,6 +6,7 @@ using std::nth_element;
 #include <functional>
 using std::function;
 using std::greater;
+using std::reference_wrapper;
 
 #include <iostream>
 using std::cin;
@@ -17,7 +18,6 @@ using std::istream_iterator;
 
 #include <numeric>
 using std::accumulate;
-using std::iota;
 
 #include <vector>
 using std::vector;
@@ -32,14 +32,13 @@ public:
 
   explicit MinCover(istream_iterator<int32_t> in)
       : N(*in), M(*++in), minSoln(N - 1), G(N * N), mayBeExposedNode(N, true),
-        deg(N), indices(N) {
+        deg(N), degRefs(deg.begin(), deg.end()) {
     for (int32_t i = 0; i < M; ++i) {
       const int32_t v1 = *++in, v2 = *++in;
       G[v1 + v2 * N] = G[v2 + v1 * N] = true;
       ++deg[v1];
       ++deg[v2];
     }
-    iota(indices.begin(), indices.end(), 0);
     buffer.reserve(M / 2);
   }
 
@@ -65,7 +64,6 @@ public:
     }
   }
 
-  // Profiling indicates that this function is ~1/3 of the runtime
   bool isExposedNode(const int32_t v) {
     const int32_t degV = deg[v];
     mayBeExposedNode[v] = false;
@@ -124,11 +122,11 @@ public:
 
       // If the best (minSoln - sz - 1) vertices are not sufficient, bound
       const size_t allowed = minSoln - sz - 1;
-      nth_element(indices.begin(), indices.begin() + allowed, indices.end(),
-                  [&](const auto l, const auto r) { return deg[l] > deg[r]; });
+      nth_element(degRefs.begin(), degRefs.begin() + allowed, degRefs.end(),
+                  greater<>());
       const int32_t bestPossible =
-          accumulate(indices.begin(), indices.begin() + allowed, 0,
-                     [&](const int32_t i, const auto x) { return i + deg[x]; });
+          accumulate(degRefs.begin(), degRefs.begin() + allowed, 0);
+
       if (bestPossible < M) {
         return minSoln;
       }
@@ -168,7 +166,7 @@ public:
 
     // Restore those vertices before taking the other branch
     M = oldM;
-    deg.swap(oldDeg);
+    deg = oldDeg;
     G.swap(oldG);
 
     // Look at the neighbors of the "best" cover additions for the other
@@ -195,7 +193,8 @@ private:
   const int32_t N;
   int32_t M, minSoln;
   vector<bool> G, mayBeExposedNode;
-  vector<int32_t> deg, indices, buffer;
+  vector<int32_t> deg, buffer;
+  vector<reference_wrapper<const int32_t>> degRefs;
 };
 
 int main() {
