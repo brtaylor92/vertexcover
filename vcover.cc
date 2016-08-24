@@ -150,7 +150,8 @@ public:
 
     // Take the greedy choice (highest degree vertex)
     const auto maxDeg = max_element(degrees.cbegin(), degrees.cend());
-    vector<int32_t> v{static_cast<int32_t>(distance(degrees.cbegin(), maxDeg))};
+    vector<int32_t> mostLikely{
+        static_cast<int32_t>(distance(degrees.cbegin(), maxDeg))};
     int32_t bestDeg = *maxDeg;
 
     // Check if there is higher total degree taking the neighbors of a deg 2
@@ -165,7 +166,7 @@ public:
         const int32_t secondIdx = distance(start, second);
         const int32_t currentDeg = degrees[firstIdx] + degrees[secondIdx];
         if (currentDeg > bestDeg) {
-          v.assign({firstIdx, secondIdx});
+          mostLikely.assign({firstIdx, secondIdx});
           bestDeg = currentDeg;
         }
       }
@@ -177,10 +178,10 @@ public:
     auto oldG = G;
 
     // Try removing the "best" vertices
-    for (const auto i : v) {
+    for (const auto i : mostLikely) {
       removeVertex(i);
     }
-    const int32_t likely = findMinCover(sz + v.size());
+    const int32_t likelySz = findMinCover(sz + mostLikely.size());
 
     // Restore those vertices before taking the other branch
     numEdges = oldNumEdges;
@@ -188,7 +189,7 @@ public:
     G.swap(oldG);
 
     // If the "best" choices are not in the min cover, their neighbors are
-    for (const auto i : v) {
+    for (const auto i : mostLikely) {
       const auto iDeg = degrees[i];
       const auto first = G.cbegin() + i * numVertices,
                  end = first + numVertices;
@@ -202,7 +203,7 @@ public:
     }
 
     // Return the size of the best cover found
-    return min(likely, findMinCover(sz));
+    return min(likelySz, findMinCover(sz));
   }
 
 private:
