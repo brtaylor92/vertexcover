@@ -4,13 +4,13 @@ using std::min;
 using std::nth_element;
 
 #include <functional>
-using std::function;
 using std::greater;
 using std::reference_wrapper;
 
 #include <iostream>
 using std::cin;
 using std::cout;
+using std::endl;
 
 #include <iterator>
 using std::distance;
@@ -31,16 +31,17 @@ public:
   MinCover() = delete;
 
   explicit MinCover(istream_iterator<int32_t> in)
-      : N(*in), M(*++in), minSoln(N - 1), G(N * N), mayBeExposedNode(N, true),
-        deg(N), degRefs(deg.cbegin(), deg.cend()) {
-    for (int32_t i = 0; i < M; ++i) {
+      : numVertices(*in), numEdges(*++in), minSoln(numVertices - 1),
+        G(numVertices * numVertices), mayBeExposedVertex(numVertices, true),
+        degrees(numVertices), degreeRefs(degrees.cbegin(), degrees.cend()) {
+    for (int32_t i = 0; i < numEdges; ++i) {
       const int32_t v1 = *++in, v2 = *++in;
-      G[v1 + v2 * N] = G[v2 + v1 * N] = true;
-      ++deg[v1];
-      ++deg[v2];
+      G[v1 + v2 * numVertices] = G[v2 + v1 * numVertices] = true;
+      ++degrees[v1];
+      ++degrees[v2];
     }
-    const int32_t maxDeg = *max_element(deg.cbegin(), deg.cend());
-    buffer.reserve(maxDeg);
+    const int32_t maxDeg = *max_element(degrees.cbegin(), degrees.cend());
+    subGraph.reserve(maxDeg);
   }
 
   ~MinCover() = default;
@@ -50,40 +51,47 @@ public:
   MinCover(MinCover &&c) = delete;
 
   void removeVertex(const int32_t v) {
-    const auto degV = deg[v];
-    deg[v] = 0;
-    M -= degV;
-    const auto first = G.cbegin() + v * N, last = first + N;
+    const auto degV = degrees[v];
+    degrees[v] = 0; // This suffices rather than setting all edges to false
+    numEdges -= degV;
+    // Set all edges from neighbors to v to false
+    const auto first = G.cbegin() + v * numVertices, last = first + numVertices;
     auto start = first;
     for (int32_t i = 0; i < degV; ++i) {
       const auto next = find(start, last, true);
       const auto idx = distance(first, next);
-      G[v + idx * N] = false;
-      mayBeExposedNode[idx] = true;
-      --deg[idx];
+      G[v + idx * numVertices] = false;
+      mayBeExposedVertex[idx] = true;
+      --degrees[idx];
       start = next + 1;
     }
   }
 
-  bool isExposedNode(const int32_t v) {
-    const int32_t degV = deg[v];
-    mayBeExposedNode[v] = false;
-    const auto first = G.cbegin() + v * N, end = first + N;
+  bool isExposedVertex(const int32_t v) {
+    // This node either is not exposed or all neighbors will be removed
+    mayBeExposedVertex[v] = false;
+    const int32_t degV = degrees[v];
+    const auto first = G.cbegin() + v * numVertices, end = first + numVertices;
     auto start = first;
     for (int32_t i = 0; i < degV; ++i) {
       const auto next = find(start, end, true);
       const auto idx = distance(first, next);
-      if (deg[idx] < degV) {
+      if (degrees[idx] < degV) {
+        // If the neighbor's degree is less than this node's,
+        // this subgraph is not a clique
         return false;
       }
-      buffer[i] = idx;
+      subGraph[i] = idx;
       start = next + 1;
     }
+    // Now check if the subgraph is complete (forms a clique)
     for (int32_t i = 0; i < degV; ++i) {
-      const auto idx = buffer[i];
+      const auto idx = subGraph[i];
       for (int32_t j = i + 1; j < degV; ++j) {
-        const auto jdx = buffer[j];
-        if (idx != jdx && !G[jdx + idx * N]) {
+        const auto jdx = subGraph[j];
+        if (idx != jdx && !G[jdx + idx * numVertices]) {
+          // If there is no edge between any 2 neighbors,
+          // this subgraph is not a clique
           return false;
         }
       }
@@ -93,16 +101,20 @@ public:
 
   int32_t removeCliques() {
     int32_t removed = 0;
-    for (int32_t i = 0; i < N; ++i) {
-      const auto degI = deg[i];
+    for (int32_t i = 0; i < numVertices; ++i) {
+      const auto degI = degrees[i];
       if (degI == 1) {
+        // If this vertex has degree 1, its neighbor must be included
         ++removed;
-        const auto start = G.cbegin() + i * N;
-        removeVertex(distance(start, find(start, start + N, true)));
-      } else if (mayBeExposedNode[i] && isExposedNode(i)) {
+        const auto start = G.cbegin() + i * numVertices;
+        removeVertex(distance(start, find(start, start + numVertices, true)));
+      } else if (mayBeExposedVertex[i] && isExposedVertex(i)) {
+        // If this is an exposed node of a clique
+        // (the subgraph composed of this node and its neighbors is a clique)
+        // then include all its neighbors
         removed += degI;
         for (int32_t j = 0; j < degI; ++j) {
-          removeVertex(buffer[j]);
+          removeVertex(subGraph[j]);
         }
       }
     }
@@ -116,9 +128,8 @@ public:
       sz += numRemoved;
 
       // If there are no edges remaining and this cover is smaller than the
-      // previous best
-      // update the best cover and return
-      if (!M && sz < minSoln) {
+      // previous best update the best cover and return
+      if (!numEdges && sz < minSoln) {
         return minSoln = sz;
       } else if (sz + 1 >= minSoln) {
         // If no better cover is possible on this branch, bound
@@ -127,30 +138,32 @@ public:
 
       // If the best (minSoln - sz - 1) vertices are not sufficient, bound
       const size_t allowed = minSoln - sz - 1;
-      nth_element(degRefs.begin(), degRefs.begin() + allowed, degRefs.end(),
-                  greater<>());
+      nth_element(degreeRefs.begin(), degreeRefs.begin() + allowed,
+                  degreeRefs.end(), greater<>());
       const int32_t bestPossible =
-          accumulate(degRefs.cbegin(), degRefs.cbegin() + allowed, 0);
+          accumulate(degreeRefs.cbegin(), degreeRefs.cbegin() + allowed, 0);
 
-      if (bestPossible < M) {
+      if (bestPossible < numEdges) {
         return minSoln;
       }
     } while ((numRemoved = removeCliques()));
 
-    const auto maxDeg = max_element(deg.cbegin(), deg.cend());
-    vector<int32_t> v{static_cast<int32_t>(distance(deg.cbegin(), maxDeg))};
+    // Take the greedy choice (highest degree vertex)
+    const auto maxDeg = max_element(degrees.cbegin(), degrees.cend());
+    vector<int32_t> v{static_cast<int32_t>(distance(degrees.cbegin(), maxDeg))};
     int32_t bestDeg = *maxDeg;
 
     // Check if there is higher total degree taking the neighbors of a deg 2
     // vertex
-    for (int32_t i = 0; i < N; ++i) {
-      if (deg[i] == 2) {
-        const auto start = G.cbegin() + i * N, end = start + N;
+    for (int32_t i = 0; i < numVertices; ++i) {
+      if (degrees[i] == 2) {
+        const auto start = G.cbegin() + i * numVertices,
+                   end = start + numVertices;
         const auto first = find(start, end, true);
         const auto second = find(first + 1, end, true);
         const int32_t firstIdx = distance(start, first);
         const int32_t secondIdx = distance(start, second);
-        const int32_t currentDeg = deg[firstIdx] + deg[secondIdx];
+        const int32_t currentDeg = degrees[firstIdx] + degrees[secondIdx];
         if (currentDeg > bestDeg) {
           v.assign({firstIdx, secondIdx});
           bestDeg = currentDeg;
@@ -159,8 +172,8 @@ public:
     }
 
     // Save the graph and related information before removing likely vertices
-    const int32_t oldM = M;
-    auto oldDeg = deg;
+    const int32_t oldNumEdges = numEdges;
+    const auto oldDegrees = degrees;
     auto oldG = G;
 
     // Try removing the "best" vertices
@@ -170,14 +183,15 @@ public:
     const int32_t likely = findMinCover(sz + v.size());
 
     // Restore those vertices before taking the other branch
-    M = oldM;
-    deg = oldDeg;
+    numEdges = oldNumEdges;
+    degrees = oldDegrees;
     G.swap(oldG);
 
     // If the "best" choices are not in the min cover, their neighbors are
     for (const auto i : v) {
-      const auto iDeg = deg[i];
-      const auto first = G.cbegin() + i * N, end = first + N;
+      const auto iDeg = degrees[i];
+      const auto first = G.cbegin() + i * numVertices,
+                 end = first + numVertices;
       auto start = first;
       for (int32_t j = 0; j < iDeg; ++j) {
         const auto next = find(start, end, true);
@@ -192,13 +206,15 @@ public:
   }
 
 private:
-  const int32_t N;
-  int32_t M, minSoln;
-  vector<bool> G, mayBeExposedNode;
-  vector<int32_t> deg, buffer;
-  vector<reference_wrapper<const int32_t>> degRefs;
+  const int32_t numVertices;
+  int32_t numEdges, minSoln;
+  vector<bool> G, mayBeExposedVertex;
+  vector<int32_t> degrees, subGraph;
+  vector<reference_wrapper<const int32_t>> degreeRefs;
 };
 
 int main() {
+  // Using \n here is measurably faster than a std::endl 
+  // on the order of 0.02s
   cout << MinCover(istream_iterator<int32_t>(cin)).findMinCover(0) << "\n";
 }
