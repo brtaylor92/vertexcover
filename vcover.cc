@@ -115,9 +115,13 @@ public:
     do {
       sz += numRemoved;
 
+      // If there are no edges remaining and this cover is smaller than the
+      // previous best
+      // update the best cover and return
       if (!M && sz < minSoln) {
         return minSoln = sz;
       } else if (sz + 1 >= minSoln) {
+        // If no better cover is possible on this branch, bound
         return minSoln;
       }
 
@@ -137,7 +141,8 @@ public:
     vector<int32_t> v{static_cast<int32_t>(distance(deg.cbegin(), maxDeg))};
     int32_t bestDeg = *maxDeg;
 
-    // Check if there is better branch taking the neighbors of deg 2 vertex
+    // Check if there is higher total degree taking the neighbors of a deg 2
+    // vertex
     for (int32_t i = 0; i < N; ++i) {
       if (deg[i] == 2) {
         const auto start = G.cbegin() + i * N, end = start + N;
@@ -153,8 +158,7 @@ public:
       }
     }
 
-    // Save the graph and related information before removing optional
-    // vertices
+    // Save the graph and related information before removing likely vertices
     const int32_t oldM = M;
     auto oldDeg = deg;
     auto oldG = G;
@@ -170,10 +174,7 @@ public:
     deg = oldDeg;
     G.swap(oldG);
 
-    // Look at the neighbors of the "best" cover additions for the other
-    // branch
-    // If the "best" choices are not part of the min cover, their neighbors
-    // are
+    // If the "best" choices are not in the min cover, their neighbors are
     for (const auto i : v) {
       const auto iDeg = deg[i];
       const auto first = G.cbegin() + i * N, end = first + N;
