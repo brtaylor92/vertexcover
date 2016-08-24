@@ -32,14 +32,15 @@ public:
 
   explicit MinCover(istream_iterator<int32_t> in)
       : N(*in), M(*++in), minSoln(N - 1), G(N * N), mayBeExposedNode(N, true),
-        deg(N), degRefs(deg.begin(), deg.end()) {
+        deg(N), degRefs(deg.cbegin(), deg.cend()) {
     for (int32_t i = 0; i < M; ++i) {
       const int32_t v1 = *++in, v2 = *++in;
       G[v1 + v2 * N] = G[v2 + v1 * N] = true;
       ++deg[v1];
       ++deg[v2];
     }
-    buffer.reserve(M / 2);
+    const int32_t maxDeg = *max_element(deg.cbegin(), deg.cend());
+    buffer.reserve(maxDeg);
   }
 
   ~MinCover() = default;
@@ -52,7 +53,7 @@ public:
     const auto degV = deg[v];
     deg[v] = 0;
     M -= degV;
-    const auto first = G.begin() + v * N, last = first + N;
+    const auto first = G.cbegin() + v * N, last = first + N;
     auto start = first;
     for (int32_t i = 0; i < degV; ++i) {
       const auto next = find(start, last, true);
@@ -67,7 +68,7 @@ public:
   bool isExposedNode(const int32_t v) {
     const int32_t degV = deg[v];
     mayBeExposedNode[v] = false;
-    const auto first = G.begin() + v * N, end = first + N;
+    const auto first = G.cbegin() + v * N, end = first + N;
     auto start = first;
     for (int32_t i = 0; i < degV; ++i) {
       const auto next = find(start, end, true);
@@ -96,7 +97,7 @@ public:
       const auto degI = deg[i];
       if (degI == 1) {
         ++removed;
-        const auto start = G.begin() + i * N;
+        const auto start = G.cbegin() + i * N;
         removeVertex(distance(start, find(start, start + N, true)));
       } else if (mayBeExposedNode[i] && isExposedNode(i)) {
         removed += degI;
@@ -125,21 +126,21 @@ public:
       nth_element(degRefs.begin(), degRefs.begin() + allowed, degRefs.end(),
                   greater<>());
       const int32_t bestPossible =
-          accumulate(degRefs.begin(), degRefs.begin() + allowed, 0);
+          accumulate(degRefs.cbegin(), degRefs.cbegin() + allowed, 0);
 
       if (bestPossible < M) {
         return minSoln;
       }
     } while ((numRemoved = removeCliques()));
 
-    const auto maxDeg = max_element(deg.begin(), deg.end());
-    vector<int32_t> v{static_cast<int32_t>(distance(deg.begin(), maxDeg))};
+    const auto maxDeg = max_element(deg.cbegin(), deg.cend());
+    vector<int32_t> v{static_cast<int32_t>(distance(deg.cbegin(), maxDeg))};
     int32_t bestDeg = *maxDeg;
 
     // Check if there is better branch taking the neighbors of deg 2 vertex
     for (int32_t i = 0; i < N; ++i) {
       if (deg[i] == 2) {
-        const auto start = G.begin() + i * N, end = start + N;
+        const auto start = G.cbegin() + i * N, end = start + N;
         const auto first = find(start, end, true);
         const auto second = find(first + 1, end, true);
         const int32_t firstIdx = distance(start, first);
@@ -175,7 +176,7 @@ public:
     // are
     for (const auto i : v) {
       const auto iDeg = deg[i];
-      const auto first = G.begin() + i * N, end = first + N;
+      const auto first = G.cbegin() + i * N, end = first + N;
       auto start = first;
       for (int32_t j = 0; j < iDeg; ++j) {
         const auto next = find(start, end, true);
