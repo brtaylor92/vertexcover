@@ -71,18 +71,19 @@ public:
     // This node either is not exposed or all neighbors will be removed
     mayBeExposedVertex[v] = false;
     const int32_t degV = degrees[v];
-    const auto first = G.cbegin() + v * numVertices, end = first + numVertices;
-    auto start = first;
+    const auto vertexStart = G.cbegin() + v * numVertices;
+    const auto vertexEnd = vertexStart + numVertices;
+    auto startSearch = vertexStart;
     for (int32_t i = 0; i < degV; ++i) {
-      const auto next = find(start, end, true);
-      const auto idx = distance(first, next);
+      const auto nextNeighbor = find(startSearch, vertexEnd, true);
+      const auto idx = distance(vertexStart, nextNeighbor);
       if (degrees[idx] < degV) {
         // If the neighbor's degree is less than this node's,
         // this subgraph is not a clique
         return false;
       }
       subGraph[i] = idx;
-      start = next + 1;
+      startSearch = nextNeighbor + 1;
     }
     // Now check if the subgraph is complete (forms a clique)
     for (int32_t i = 0; i < degV; ++i) {
@@ -121,23 +122,24 @@ public:
     return removed;
   }
 
-  int32_t findMinCover(int32_t sz) {
-    // Remove cliques/degree one vertices; these must always be in the cover
+  int32_t findMinCover(int32_t size) {
+    // Remove cliques and neighbors of degree one vertices
+    // these must always be in the cover
     int32_t numRemoved = 0;
     do {
-      sz += numRemoved;
-
+      // Update the size of this cover
+      size += numRemoved;
       // If there are no edges remaining and this cover is smaller than the
       // previous best update the best cover and return
-      if (!numEdges && sz < minSoln) {
-        return minSoln = sz;
-      } else if (sz + 1 >= minSoln) {
+      if (!numEdges && size < minSoln) {
+        return minSoln = size;
+      } else if (size + 1 >= minSoln) {
         // If no better cover is possible on this branch, bound
         return minSoln;
       }
 
-      // If the best (minSoln - sz - 1) vertices are not sufficient, bound
-      const size_t allowed = minSoln - sz - 1;
+      // If the best (minSoln - size - 1) vertices are not sufficient, bound
+      const size_t allowed = minSoln - size - 1;
       nth_element(degreeRefs.begin(), degreeRefs.begin() + allowed,
                   degreeRefs.end(), greater<>());
       const int32_t bestPossible =
@@ -158,12 +160,12 @@ public:
     // vertex
     for (int32_t i = 0; i < numVertices; ++i) {
       if (degrees[i] == 2) {
-        const auto start = G.cbegin() + i * numVertices,
-                   end = start + numVertices;
-        const auto first = find(start, end, true);
-        const auto second = find(first + 1, end, true);
-        const int32_t firstIdx = distance(start, first);
-        const int32_t secondIdx = distance(start, second);
+        const auto vertexStart = G.cbegin() + i * numVertices;
+        const auto vertexEnd = vertexStart + numVertices;
+        const auto firstNeighbor = find(vertexStart, vertexEnd, true);
+        const auto secondNeighbor = find(firstNeighbor + 1, vertexEnd, true);
+        const int32_t firstIdx = distance(vertexStart, firstNeighbor);
+        const int32_t secondIdx = distance(vertexStart, secondNeighbor);
         const int32_t currentDeg = degrees[firstIdx] + degrees[secondIdx];
         if (currentDeg > bestDeg) {
           mostLikely.assign({firstIdx, secondIdx});
@@ -181,7 +183,7 @@ public:
     for (const auto i : mostLikely) {
       removeVertex(i);
     }
-    const int32_t likelySz = findMinCover(sz + mostLikely.size());
+    const int32_t likelySize = findMinCover(size + mostLikely.size());
 
     // Restore those vertices before taking the other branch
     numEdges = oldNumEdges;
@@ -198,12 +200,12 @@ public:
         const auto next = find(start, end, true);
         removeVertex(distance(first, next));
         start = next + 1;
-        ++sz;
+        ++size;
       }
     }
 
     // Return the size of the best cover found
-    return min(likelySz, findMinCover(sz));
+    return min(likelySize, findMinCover(size));
   }
 
 private:
