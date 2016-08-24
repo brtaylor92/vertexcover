@@ -214,7 +214,7 @@ private:
 };
 
 int main() {
-  // Using \n here is measurably faster than a std::endl 
+  // Using \n here is measurably faster than a std::endl
   // on the order of 0.02s
   cout << MinCover(istream_iterator<int32_t>(cin)).findMinCover(0) << "\n";
 }
