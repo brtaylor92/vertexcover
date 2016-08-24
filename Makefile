@@ -4,7 +4,7 @@ CXXFLAGS = -std=c++14 -Wall -Wextra -Wshadow -pedantic
 .PHONY: clean
 
 vcover: vcover.cc
-	$(CXX) $(CXXFLAGS) -O3 -fno-exceptions -fno-rtti -fomit-frame-pointer $< -o $@
+	$(CXX) $(CXXFLAGS) -O3 -march=native -fno-exceptions -fno-rtti -fomit-frame-pointer $< -o $@
 
 debug: vcover.cc
 	$(CXX) $(CXXFLAGS) -g -DDEBUG $< -o $@
